@@ -112,8 +112,11 @@ made (Phase 8). The kiosk still runs on fixtures with `NEXT_PUBLIC_MOCK_MODE=tru
 
 ```bash
 bun run models:sync        # ~16 MB, once
-bun run dev
+bun run dev:https          # camera needs HTTPS on any origin that is not localhost
 ```
+
+`getUserMedia` is blocked on plain-HTTP LAN origins. `dev:https` serves a self-signed certificate;
+accept the warning on the tablet once. Deploying a Netlify preview also works.
 
 Open `/dev/face` (link at the bottom of Ajustes) on the tablet:
 
