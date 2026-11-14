@@ -12,7 +12,7 @@
 # Keep the two files in sync (headers, env, plugin).
 
 [build]
-  command = "bun run models:sync && bun run check:env && bun run build"
+  command = "bun install --frozen-lockfile && bun run models:sync && bun run check:env && bun run build"
   publish = "apps/web/.next"
 
 [build.environment]

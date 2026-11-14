@@ -9,7 +9,7 @@
 # If you change headers or the env list, change both files.
 
 [build]
-  command = "cd ../.. && bun run models:sync && bun run check:env && bun run build"
+  command = "cd ../.. && bun install --frozen-lockfile && bun run models:sync && bun run check:env && bun run build"
   publish = ".next"
 
 [build.environment]
