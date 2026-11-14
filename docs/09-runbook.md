@@ -81,17 +81,18 @@ the Auth API should create.
 
 The kiosk needs HTTPS for `getUserMedia`, so the tablet talks to a Netlify deploy instead of the LAN.
 
-**Site settings that matter** (Project configuration → Build & deploy):
+**Site settings** (Project configuration → Build & deploy). Two layouts work; pick one:
 
-| Setting | Value |
-| --- | --- |
-| Base directory | **empty** (repo root) |
-| Package directory | **empty** |
-| Build command | from `netlify.toml` |
-| Publish directory | from `netlify.toml` (`apps/web/.next`) |
+| Layout | Base directory | Publish directory | Config used |
+| --- | --- | --- | --- |
+| Monorepo detection picked the app | `apps/web` | `.next` | `apps/web/netlify.toml` |
+| Manual / empty base | *(empty)* | `apps/web/.next` | `/netlify.toml` |
 
-Do **not** set the base directory to `apps/web`: Netlify would install dependencies there, where there
-is no lockfile and `workspace:*` cannot be resolved by npm.
+Both files exist and must be kept in sync (headers, env, plugin). The app-level command starts with
+`cd ../..` so the build always runs where `bun.lockb` and the root scripts live.
+
+Whichever layout you keep, Netlify must install dependencies from the **repo root**: `workspace:*`
+cannot be resolved by npm inside `apps/web`.
 
 **Environment variables:**
 

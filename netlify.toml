@@ -6,9 +6,10 @@
 #   • Package directory:     leave EMPTY
 #   • Build command:         taken from here
 #   • Publish directory:     apps/web/.next  ← the runtime derives the app dir from it
-# Setting base="apps/web" would make Netlify install in a directory that has no
-# lockfile and whose package.json uses the `workspace:*` protocol, which npm cannot
-# resolve. Do not set it.
+# This file covers Base directory = repo root. If Netlify's monorepo detection sets
+# Base directory = apps/web (the usual result of picking the app in the UI), the
+# config in apps/web/netlify.toml is used instead and this one is ignored.
+# Keep the two files in sync (headers, env, plugin).
 
 [build]
   command = "bun run models:sync && bun run check:env && bun run build"

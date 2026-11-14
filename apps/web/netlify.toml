@@ -1,0 +1,49 @@
+# Site-level config for the case where Netlify's monorepo detection sets
+# Base directory = apps/web (the default when you pick the app in the UI).
+#
+# Everything here is relative to apps/web:
+#   • publish ".next"                      -> /opt/build/repo/apps/web/.next
+#   • command walks to the repo root, where bun.lockb and the scripts live.
+#
+# The repo-root netlify.toml covers the other layout (Base directory empty).
+# If you change headers or the env list, change both files.
+
+[build]
+  command = "cd ../.. && bun run models:sync && bun run check:env && bun run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  BUN_VERSION = "1.1.34"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[dev]
+  command = "cd ../.. && bun run dev"
+  targetPort = 3000
+  framework = "next"
+
+# ── Security headers ─────────────────────────────────────────────────────────
+# The kiosk needs the camera. 'wasm-unsafe-eval' is for TensorFlow.js.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-DNS-Prefetch-Control = "off"
+    Permissions-Policy = "camera=(self), microphone=(), geolocation=(), payment=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+[[headers]]
+  for = "/models/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
