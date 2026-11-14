@@ -77,6 +77,48 @@ Notes:
 Seed creates one store. Staff and devices are not seeded: they need `auth.users` rows, which only
 the Auth API should create.
 
+## 3.1 Netlify deploy (the path we actually use)
+
+The kiosk needs HTTPS for `getUserMedia`, so the tablet talks to a Netlify deploy instead of the LAN.
+
+**Site settings that matter** (Project configuration → Build & deploy):
+
+| Setting | Value |
+| --- | --- |
+| Base directory | **empty** (repo root) |
+| Package directory | **empty** |
+| Build command | from `netlify.toml` |
+| Publish directory | from `netlify.toml` (`apps/web/.next`) |
+
+Do **not** set the base directory to `apps/web`: Netlify would install dependencies there, where there
+is no lockfile and `workspace:*` cannot be resolved by npm.
+
+**Environment variables:**
+
+| Key | Value |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://<ref>.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the anon / publishable key |
+| `NEXT_PUBLIC_APP_URL` | `https://<site>.netlify.app` (set after the first deploy) |
+| `NEXT_PUBLIC_MOCK_MODE` | `true` until Phases 6–8 wire the kiosk |
+
+`bun run check:env` runs during the build and fails it if a key is missing or if the anon key looks
+like a secret. The build also runs `bun run models:sync` (16 MB, not in git).
+
+Auth redirect URLs for the cloud project: `https://<site>.netlify.app` and
+`https://<site>.netlify.app/**` (Auth → URL configuration). Anonymous sign-ins must stay enabled.
+
+**Deploy from the CLI instead of Git:**
+
+```bash
+bunx netlify login
+bunx netlify init            # or: netlify sites:create --name facepay-mx
+bunx netlify env:set NEXT_PUBLIC_SUPABASE_URL https://<ref>.supabase.co
+bunx netlify env:set NEXT_PUBLIC_SUPABASE_ANON_KEY <anon>
+bunx netlify env:set NEXT_PUBLIC_MOCK_MODE true
+bunx netlify deploy --build --prod
+```
+
 ## 4. Pointing pey at a local webhook
 
 pey allows one webhook per API key, and it must be HTTPS.

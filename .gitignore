@@ -42,3 +42,6 @@ docs/calibration/*.csv
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# netlify CLI state
+.netlify/

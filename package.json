@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "build": "cd apps/web && bun run build",
+    "check:env": "bun scripts/check-env.ts",
     "check:secrets": "bun run scripts/check-secrets.ts",
     "db:lint": "bunx supabase db lint",
     "db:reset": "bunx supabase db reset",
