@@ -2,6 +2,19 @@
  * Fails the Netlify build when the public Supabase configuration is missing.
  * Better a red build than a deployed app that silently cannot sign anyone in.
  */
+import { existsSync, readFileSync } from 'node:fs';
+
+// On Netlify the values come from project env vars. Locally they live in
+// apps/web/.env.local, which Next reads but a plain `bun run` does not.
+const localEnv = 'apps/web/.env.local';
+if (existsSync(localEnv)) {
+  for (const line of readFileSync(localEnv, 'utf8').split('\n')) {
+    const match = /^([A-Z0-9_]+)=(.*)$/.exec(line.trim());
+    const key = match?.[1];
+    if (key && !process.env[key]) process.env[key] = match?.[2] ?? '';
+  }
+}
+
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
