@@ -218,8 +218,9 @@ on request); `phone_e164` is unverified; `payment_events.webhook_id` unique; RLS
 
 ## 7. Phases
 
-Status: Phase 0 done, **Phase 1 done (mock UI)**, **Phase 2 done — schema applied to
-`facepay-mx-dev` and 12/12 RLS assertions green**. Check `MEMOIRS.md` for the current state.
+Status: Phase 0–1 done (mock UI), **Phase 2 done** (schema + 19/19 DB assertions green),
+**Phase 3 done** (real anonymous identity, consent with hash, `/mi-cuenta` on real rows).
+Check `MEMOIRS.md` for the current state.
 
 | Phase | Deliverable | Acceptance |
 | --- | --- | --- |

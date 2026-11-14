@@ -19,6 +19,54 @@ Entry template:
 
 ---
 
+## 2026-11-14 — Phase 3: real customer identity + consent — agent
+**Intent:** stop faking the identity layer. From here on, a real person has a real row and a real,
+evidenced consent, while the kiosk keeps running on fixtures.
+
+**Changed:**
+- `@supabase/supabase-js` browser client (`lib/supabase.ts`, public URL + anon key only) and a small
+  data layer (`lib/db.ts`): `ensureSession`, `getMyProfile`, `savePhone`, `recordConsent`,
+  `listMyConsents`, `listMyTemplates`, `revokeMyFace`, `deleteMyAccount`.
+- Three customer RPCs (migration `…120800`): `set_my_phone` (E.164 normalization + audit),
+  `revoke_my_face`, `delete_my_account`. The customer still has **no** INSERT/UPDATE/DELETE on
+  `customers` or `face_templates`.
+- Onboarding is now a server component (`page.tsx`) that SHA-256s the exact markdown the customer sees
+  and hands the hash to a client flow (`flow.tsx`). Phone + consent are **real**; the face step and the
+  payment step stay mock until Phases 5 and 8.
+- `/mi-cuenta` reads the real profile, consents and template metadata; delete-face and delete-account
+  call the RPCs. Falls back to the local demo when Supabase is not configured.
+- Enabled **anonymous sign-ins on the cloud project** via the Management API: `config.toml` only
+  affects the local stack. `uri_allow_list` set to localhost:3000.
+- `next.config.ts`: `outputFileTracingIncludes` so the legal markdown ships with the server bundle.
+- New pgTAP file `customer-rpcs.test.sql` (7 assertions); the runner now globs `supabase/tests/*.test.sql`.
+
+**Bug found by the E2E run (and fixed, migration `…120900`):**
+Anonymous users created through the Auth API have `raw_app_meta_data = {}`, so the trigger's
+`provider = 'anonymous'` test never matched and **no customers row was created** (the consent insert
+then failed with 409/foreign key). Fixed by checking `auth.users.is_anonymous`, with a backfill for
+users created in between, and `set_my_phone` now upserts instead of silently updating zero rows.
+
+**Verified:**
+- `db push` clean; `19 assertions, 0 failures` (12 RLS + 7 RPC).
+- REST end-to-end with a real anonymous user: signup → trigger creates profile → `set_my_phone`
+  returns `+525512345678` → consent insert 201 → template view `[]` → `delete_my_account` 204 →
+  profile `{phone: null, status: deleted}`.
+- `typecheck` and `build` green (17 routes).
+
+**Deviations:** deleting the *auth user* needs the Admin API (service role), so `delete_my_account`
+anonymizes the profile and revokes templates instead. Flagged for Phase 11 (retention job).
+
+**Known issues / traps:**
+- Each browser gets its own anonymous identity in `localStorage` (`facepay.auth`). Clear storage and
+  the account is unreachable — documented as O3.
+- The consent hash comes from the markdown file, so **editing that file without bumping
+  `LEGAL_DOC_VERSION` invalidates old evidence**. Always bump.
+- `biometric_consents` is append-only by policy; never add UPDATE/DELETE grants.
+- The face step still writes nothing (Phase 5). `/mi-cuenta` will honestly show 0 templates.
+
+**Next:** Phase 4 — `packages/face-engine` (camera, quality gates, liveness challenge, embedding) plus
+the calibration spike that decides whether Human is good enough or we move to MediaPipe + ArcFace.
+
 ## 2026-11-14 — Phase 2b: remote project created, schema applied, RLS green — agent
 **Intent:** close Phase 2 without Docker, per the owner's preference.
 

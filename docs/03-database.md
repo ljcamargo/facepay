@@ -456,17 +456,21 @@ Enforcement notes:
 | --- | --- | --- |
 | `handle_new_auth_user` | trigger on `auth.users` | create a `customers` row on first sign-in (anonymous) |
 | `set_updated_at` | trigger | timestamps |
-| `create_onboarding_session` | RPC (device) | token generation, hashing, TTL |
-| `claim_onboarding_session` | RPC (customer) | bind token to authed customer, check TTL/status |
-| `revoke_my_face` | RPC (customer) | soft-delete templates + audit |
-| `delete_my_account` | RPC (customer) | revoke templates, null PII, keep accounting rows anonymized |
+| `create_onboarding_session` | RPC (device) | token generation, hashing, TTL *(Phase 6)* |
+| `claim_onboarding_session` | RPC (customer) | bind token to authed customer, check TTL/status *(Phase 6)* |
+| `set_my_phone(text)` | RPC (customer) | normalize to E.164, upsert profile, audit — **done** |
+| `revoke_my_face()` | RPC (customer) | soft-delete caller templates, return count, audit — **done** |
+| `delete_my_account()` | RPC (customer) | revoke templates, null phone/name, status `deleted` — **done** |
 | — | — | *(removed: phone-based retro-linkage needs a verified number; see ADR-014)* |
 | `check_rate_limit` | function | atomic counter per key/window (service_role only) |
 
-Migration files as applied: `20261114120000_extensions`, `…120100_types`, `…120200_tables`,
-`…120300_indexes`, `…120400_functions`, `…120500_rls`, `…120600_realtime`.
-`legal_documents` is created now but stays empty until Phase 3 copies the accepted markdown
-versions into it (the app renders `apps/web/content/legal/*.md` today, so there is one source).
+Migration files as applied: `…120000_extensions`, `…120100_types`, `…120200_tables`,
+`…120300_indexes`, `…120400_functions`, `…120500_rls`, `…120600_realtime`,
+`…120700_fix_identify_ambiguity`, `…120800_customer_rpcs`, `…120900_fix_auth_trigger`.
+`legal_documents` stays empty for now: the consent hash recorded in `biometric_consents` is the
+SHA-256 of the markdown the app renders (`apps/web/content/legal/*.md`), so there is one source.
+Also note: anonymous users have `raw_app_meta_data = {}` — use `auth.users.is_anonymous`, not the
+provider field, to detect them.
 
 ## 7. Retention
 

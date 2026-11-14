@@ -17,7 +17,10 @@ if (!url) {
 }
 
 const files = process.argv.slice(2);
-const targets = files.length > 0 ? files : ['supabase/tests/rls.test.sql'];
+const glob = new Bun.Glob('supabase/tests/*.test.sql');
+const discovered: string[] = [];
+for await (const file of glob.scan('.')) discovered.push(file);
+const targets = files.length > 0 ? files : discovered.sort();
 
 const sql = postgres(url, { max: 1, idle_timeout: 5, onnotice: () => {} });
 

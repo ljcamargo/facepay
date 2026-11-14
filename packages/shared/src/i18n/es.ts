@@ -178,6 +178,18 @@ export const es = {
   'miCuenta.sessionHint': 'Esta sesión vive solo en este dispositivo.',
   'miCuenta.deleted': 'Tu plantilla fue eliminada.',
 
+  'miCuenta.realBadge': 'Cuenta real',
+  'miCuenta.demoBadge': 'Demo local',
+  'miCuenta.phone': 'Celular',
+  'miCuenta.status': 'Estado',
+  'miCuenta.noPhone': 'Sin celular',
+  'miCuenta.realNotice': 'Estos datos vienen de la base de datos.',
+  'miCuenta.error': 'No pudimos cargar tu cuenta.',
+  'miCuenta.deleteAccount': 'Borrar mi cuenta',
+  'miCuenta.deleteAccountConfirm': 'Se borrarán tu rostro y tus datos de contacto. No se puede deshacer.',
+  'miCuenta.accountDeleted': 'Tu cuenta quedó borrada.',
+  'miCuenta.confirm': '¿Seguro?',
+  'onboarding.authError': 'No pudimos crear tu sesión. Revisa tu conexión.',
   'notFound.title': 'No encontramos esta página',
 } as const;
 
