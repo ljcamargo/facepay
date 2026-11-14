@@ -252,7 +252,12 @@ export function OnboardingFlow({ token, legal }: Props) {
       {step === 'face' && (
         <div className="flex flex-col gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">{t('onboarding.face.title')}</h1>
-          <CameraStage progress={progress} challenge={t('onboarding.face.challenge')} showVector />
+          <CameraStage
+            progress={progress}
+            challenge={t('onboarding.face.look')}
+            hint={t('onboarding.face.still')}
+            showVector
+          />
           <p className="text-center text-xs text-muted-foreground">{t('onboarding.face.local')}</p>
           <Button
             variant="outline"

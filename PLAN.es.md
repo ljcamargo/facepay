@@ -110,7 +110,8 @@ nunca en la tablet compartida.
 
 1. El cajero captura monto + concepto (presets + texto libre).
 2. `POST /payments/checkout` → fila `transactions` en `created`, monto congelado en el servidor.
-3. Cámara + control de calidad + reto de vivacidad aleatorio (parpadea / gira / sonríe / **muestra 2 dedos**).
+3. Cámara + filtros de calidad + puntaje **pasivo** de anti-spoof. Sin giros ni parpadeos a
+   solicitud: el cliente solo mira a la cámara ~1 s (ADR-017).
 4. El embedding se calcula en el navegador; el frame nunca sale del dispositivo.
 5. `POST /face/identify` → top-2 en pgvector → `matched` | `ambiguous` | `no_match`.
 6. `matched` → "¿Eres Ana? · •••• 5678" → "Sí, enviar solicitud a mi banco" / "No soy yo".

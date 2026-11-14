@@ -22,7 +22,7 @@ false-match rate we can defend, and without storing any image. Anything stronger
 
 | Option | Embedding | Liveness | Hands | License | Size | Verdict |
 | --- | --- | --- | --- | --- | --- | --- |
-| **`@vladmandic/human` 3.x** | HSE FaceRes, **1024-d**, `face.embedding` | `face.antispoof` → `real`, `face.liveness` → `live` (scores) | HandTrack + HandLandmarks | MIT | ~14 MB of models (detector 0.54 + mesh 1.48 + iris 2.6 + faceres 6.98 + antispoof 0.85 + liveness 0.59) | **Chosen for MVP** — one library, one API, liveness + hands included |
+| **`@vladmandic/human` 3.x** | HSE FaceRes, **1024-d**, `face.embedding` | `face.antispoof` → `real`, `face.liveness` → `live` (scores) | HandTrack + HandLandmarks | MIT | ~23 MB of models (17 MB face pipeline + 6 MB hands) | **Chosen for MVP** — one library, one API, liveness + hands included |
 | `@vladmandic/face-api` | FaceNet-style **128-d** | none built-in (blink via landmarks) | – | MIT | ~6 MB | Lower accuracy, unmaintained since 2025; rejected |
 | MediaPipe Tasks (`@mediapipe/tasks-vision`) + ArcFace/MobileFaceNet ONNX via `onnxruntime-web` | **512-d** (ArcFace) | 478 landmarks + blendshapes → challenge; passive spoof needs a separate model | HandLandmarker (21 pts) | Apache-2.0 | ~4 MB + 100–200 MB ONNX (quantizable to ~25 MB) | **Documented upgrade path** for accuracy; more integration work |
 | InsightFace `buffalo_l` in browser | 512-d, SOTA | – | – | MIT (models: non-commercial) | 300 MB+ (quantized ~100 MB) | Too heavy for a browser kiosk; the license matters for commercial use |
@@ -63,9 +63,16 @@ getUserMedia(1280×720, facingMode:user, frameRate 24–30)
 | Occlusion | eyes + nose + mouth landmarks visible | "Quítate los lentes de sol" |
 | Interior frame | face box fully inside the safe area | "Centra tu rostro" |
 
-### Liveness challenge
+### Liveness: passive by default
 
-Random per attempt, driven by `Human` gestures / mesh:
+The customer path does **not** ask for head turns, blinks or gestures. The cashier line is the product;
+a 4-second performance per customer kills it. The kiosk captures a frontal frame for ~1 s, reads the
+passive scores (`real`, `live`), records them in the audit row, and matches. Nothing is enforced in the
+MVP because (a) the bank authorizes the money, and (b) browser liveness scores are noisy enough that
+enforcing them would reject real customers on real webcams. Revisit with numbers from `/dev/face`.
+
+**Optional challenges** (used by `/dev/face`, and available per store behind a flag if a merchant asks
+for stronger anti-replay) are random per attempt:
 
 - `parpadea` — both-eye blink within 2.5 s (eye aspect ratio)
 - `gira lentamente a la derecha` — yaw sweep ≥ 18° and back
@@ -135,11 +142,12 @@ real device, switch to MediaPipe + ArcFace (same `FaceEngine` interface) before 
 
 ## 5. Model delivery and performance
 
-- Self-host the model files under `apps/web/public/models/human/` (pey-free, no CDN dependency,
-  deterministic version). `modelBasePath: '/models/human/'`.
+- Self-host the model files under `apps/web/public/models/human/` (~23 MB, gitignored, fetched by
+  `bun run models:sync`). `modelBasePath: '/models/human/'`. Hands are ~6 MB extra and only loaded
+  when `hands: true`.
 - Lazy-load the engine **after** the cashier taps "Cobrar con rostro", not on app boot; show a 1–2 s
   "Preparando cámara…" state.
-- Cache in Cache Storage/IndexedDB; a service worker keeps ~15 MB warm. First run on store Wi-Fi is
+- Cache in Cache Storage/IndexedDB; the models are served with a one-year immutable header. First run on store Wi-Fi is
   the slow case — pre-warm during pairing.
 - TFJS backend preference: `webgl` → `wasm` → `cpu`. Log the chosen backend; a silent CPU fallback is
   a support ticket.

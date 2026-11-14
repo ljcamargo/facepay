@@ -17,6 +17,7 @@ const BASE = 'https://raw.githubusercontent.com/vladmandic/human-models/main/mod
 
 // Face pipeline + optional hands. Keep in sync with human-engine.ts.
 const MODELS = [
+  'blazeface',        // the file Human requests by default
   'blazeface-back',
   'facemesh',
   'faceres',
@@ -24,6 +25,7 @@ const MODELS = [
   'liveness',
   'handtrack',
   'handlandmark-lite',
+  'handskeleton',
 ];
 
 const force = process.argv.includes('--force');

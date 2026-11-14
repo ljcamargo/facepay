@@ -122,7 +122,7 @@ already frozen — the customer who refuses biometrics never has to look at the 
 │        ╭───────────────────────────────────╮                             │
 │        │                                   │    ◜◝  Mira a la cámara     │
 │        │                                   │                             │
-│        │            ( live camera )        │    Reto:  parpadea          │
+│        │            ( live camera )        │    quieto 1 segundo         │
 │        │        ╭───────────────╮          │                             │
 │        │        │               │          │    ▓▓▓▓▓▓▓▓░░░░  62%        │
 │        │        │   face oval   │          │                             │
@@ -296,7 +296,7 @@ customer pays a CoDi push, and the pixel that proves intent is the consent check
 │                  │    │ • Guardamos una plantilla│ │  │   ◯ guía   │  │ │  registrado      │
 │ Celular a 10     │    │   matemática, no fotos.  │ │  ╰────────────╯  │ │                  │
 │ dígitos          │    │ • Se usa solo para       │ │                  │ │  Ana · •••• 5678 │
-│ ┌──────────────┐ │    │   identificarte y cobrar.│ │ Reto: gira a la  │ │                  │
+│ ┌──────────────┐ │    │   identificarte y cobrar.│ │ quieto 1 segundo │ │                  │
 │ │ 55 1234 5678 │ │    │ • Puedes borrarla cuando │ │ derecha          │ │ [ Pagar $80.00 ] │
 │ └──────────────┘ │    │   quieras.               │ │ ▓▓▓▓▓▓░░ 70%     │ │                  │
 │                  │    │ • No es obligatorio:     │ │                  │ │ O paga en la     │
@@ -350,7 +350,8 @@ state is not lost.
 | `kiosk.checkout.face` | Cobrar con rostro |
 | `kiosk.checkout.other` | Otros métodos |
 | `kiosk.identify.look` | Mira a la cámara |
-| `kiosk.identify.challenge.blink` | Reto: parpadea |
+| `kiosk.identify.holdStill` | Quédate quieto un segundo |
+| `kiosk.identify.challenge.blink` | Reto: parpadea *(solo retos opcionales y /dev/face)* |
 | `kiosk.identify.challenge.right` | Reto: gira lentamente a la derecha |
 | `kiosk.identify.challenge.smile` | Reto: sonríe |
 | `kiosk.identify.privacy` | Tu rostro no se guarda como foto. Solo calculamos una plantilla matemática de 1024 números que no se puede revertir a una imagen. |

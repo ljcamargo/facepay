@@ -19,6 +19,34 @@ Entry template:
 
 ---
 
+## 2026-11-14 — Phase 4b: models fixed, challenges removed from the customer path — human + agent
+**Intent:** the first deploy showed `404 /models/human/blazeface.json`, and the owner rightly rejected
+head-turning challenges in a retail queue.
+
+**Changed:**
+- `scripts/sync-models.ts` now ships `blazeface` (the file Human actually requests) and `handskeleton`.
+  Total ~23 MB: 17 MB face pipeline, 6 MB hands. Hands are opt-in (`hands: false` by default in the
+  harness, checkbox to enable).
+- **ADR-017:** the customer path is passive — camera, quality gates, passive `real`/`live` scores,
+  match. No blink/turn/smile/gesture instructions. The challenge state machine stays for `/dev/face` and
+  for stores that opt in. Liveness is recorded, not enforced, in the MVP.
+- Kiosk identify and onboarding face steps now say "Mira a la cámara / Quédate quieto un segundo".
+  Copy keys for the optional challenges remain, documented as such.
+- `PLAN.md` + `PLAN.es.md` step 3 updated; docs/06 §3 and §5 updated; docs/05 wireframes updated.
+
+**Verified:** typecheck clean, 22 engine tests still green, models re-synced, `blazeface.bin` hash matches
+the copy already in the repo (0.54 MB).
+
+**Known issues / traps:**
+- Human requests the detector as `blazeface.json`, not `blazeface-back.json`; both exist now, don't
+  remove either without re-testing `/dev/face`.
+- Model weight in git stays zero (gitignored); the build downloads them every deploy (~10 s).
+- Liveness thresholds are not enforced. If we ever enforce them, measure on `/dev/face` first: real
+  webcams often score lower than printed photos.
+
+**Next:** Phase 5 (real enrollment) once the harness numbers are in — or immediately, if the owner
+prefers to wire it behind the current engine.
+
 ## 2026-11-14 — Phase 4: face engine, gates, liveness, calibration — agent
 **Intent:** replace the animated placeholder with the real capture pipeline, and make the accuracy
 decision measurable instead of a guess.
@@ -29,7 +57,7 @@ decision measurable instead of a guess.
 - Pure, tested modules: `gates.ts` (single face, size, frontal, sharpness via Laplacian variance,
   exposure, occlusion, inside frame + weighted quality score) and `challenge.ts` (blink / turn / smile
   / hands / approach as a 4 s state machine). **22 unit tests**, no camera needed.
-- `scripts/sync-models.ts`: downloads 16.4 MB of models into `apps/web/public/models/human/`
+- `scripts/sync-models.ts`: downloads ~23 MB of models into `apps/web/public/models/human/`
   (gitignored), prints checksums, supports `--check`. Netlify runs it before `next build`.
 - Dev harnesses: `/dev/face` (camera, fps, backend, live gates + customer hint, challenges, capture
   with hash/timing) and `/dev/calibrate` (local images → FAR/FRR curve, EER, recommended threshold,

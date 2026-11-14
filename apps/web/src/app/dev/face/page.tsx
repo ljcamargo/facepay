@@ -58,6 +58,7 @@ export default function FaceHarnessPage() {
   const [capture, setCapture] = React.useState<Capture | null>(null);
   const [challenge, setChallenge] = React.useState<ChallengeState | null>(null);
   const [challengeKind, setChallengeKind] = React.useState<ChallengeKind>('blink');
+  const [withHands, setWithHands] = React.useState(false);
 
   const stop = React.useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -100,7 +101,10 @@ export default function FaceHarnessPage() {
 
       const engine = engineRef.current ?? createFaceEngine();
       engineRef.current = engine;
-      const { backend: chosen } = await engine.load({ modelBasePath: '/models/human/', hands: true });
+      const { backend: chosen } = await engine.load({
+        modelBasePath: '/models/human/',
+        hands: withHands,
+      });
       setBackend(chosen);
       setCamera(true);
     } catch (err) {
@@ -239,6 +243,15 @@ export default function FaceHarnessPage() {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={withHands}
+                  onChange={(e) => setWithHands(e.target.checked)}
+                  disabled={camera || loading}
+                />
+                manos
+              </label>
               <Button onClick={start} disabled={loading || camera}>
                 {loading ? 'Cargando modelos…' : 'Encender cámara'}
               </Button>

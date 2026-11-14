@@ -45,6 +45,7 @@ export const es = {
 
   'kiosk.identify.title': 'Cobrar {amount}',
   'kiosk.identify.look': 'Mira a la cámara',
+  'kiosk.identify.holdStill': 'Quédate quieto un segundo',
   'kiosk.identify.preparing': 'Preparando cámara…',
   'kiosk.identify.challenge.blink': 'Reto: parpadea',
   'kiosk.identify.challenge.turnRight': 'Reto: gira lentamente a la derecha',
@@ -156,6 +157,8 @@ export const es = {
   'onboarding.consent.accept': 'Aceptar y seguir',
   'onboarding.consent.required': 'Necesitamos tu consentimiento para guardar la plantilla.',
   'onboarding.face.title': 'Mira la cámara',
+  'onboarding.face.look': 'Mira a la cámara',
+  'onboarding.face.still': 'Quédate quieto un segundo',
   'onboarding.face.challenge': 'Reto: gira lentamente a la derecha',
   'onboarding.face.local': 'Solo en tu celular. El kiosco no guarda tu rostro.',
   'onboarding.face.stop': 'Detener',

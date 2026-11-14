@@ -111,7 +111,7 @@ made (Phase 8). The kiosk still runs on fixtures with `NEXT_PUBLIC_MOCK_MODE=tru
 ## 4.5 Phase 4 — face engine on the real tablet
 
 ```bash
-bun run models:sync        # ~16 MB, once
+bun run models:sync        # ~23 MB, once
 bun run dev:https          # camera needs HTTPS on any origin that is not localhost
 ```
 

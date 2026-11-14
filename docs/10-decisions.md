@@ -227,3 +227,22 @@ is created on the device that owns the number. Cost: ~25 s of customer-side fric
 CoDi QR fallback so the line never stops.
 
 ---
+
+---
+
+## ADR-017 — Passive capture by default; no challenges in the customer path
+
+**Context:** the first sketch asked the customer to blink, turn, smile or show fingers. That is the only
+anti-replay property available in a browser, but it costs 3–5 seconds per customer and makes a retail
+queue worse. It also protects something we deliberately do not rely on: the face does not authorize
+money (ADR-002).
+
+**Decision:** the production path is **camera → quality gates → passive liveness score → match**, with
+no instruction beyond "look at the camera, hold still one second". The challenge state machine stays in
+`packages/face-engine`, used by `/dev/face` and available per store behind a flag for merchants who want
+it. Liveness scores are recorded in `face_identifications`, not enforced in the MVP.
+
+**Consequences:** ~1–2 s per identification instead of ~6 s, and no choreography to explain at the
+counter. A photo held up to the camera can still pass; the blast radius is a request the real person
+declines, exactly as before. If a store later needs anti-replay, it turns the flag on and pays the
+seconds.
