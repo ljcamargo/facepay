@@ -50,8 +50,9 @@ cp .env.example .env.local
 
 bunx supabase login
 bunx supabase link --project-ref <staging-ref>
-bunx supabase start            # Postgres :54322, API :54321, Studio :54323
+bunx supabase start            # Postgres :54322  (needs Docker), API :54321, Studio :54323
 bunx supabase db reset         # applies migrations + seed
+bunx supabase test db          # RLS contract (pgTAP)
 bunx supabase functions serve --env-file supabase/.env.local
 bun run dev                       # http://localhost:3000/kiosk
 ```

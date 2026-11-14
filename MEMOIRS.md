@@ -19,6 +19,42 @@ Entry template:
 
 ---
 
+## 2026-11-14 — Phase 2: schema + RLS written, execution blocked on Docker — agent
+**Intent:** create the database contract the Edge Functions will rely on.
+
+**Changed:**
+- `supabase/config.toml` initialised (CLI 3.1.0). Site URL → `localhost:3000`, anonymous sign-ins
+  **enabled** (kiosk + customer sessions), seed path set.
+- 7 migrations: extensions, enums, tables, indexes, functions/triggers/view, RLS, realtime publication.
+  - 14 tables, vector(1024) + HNSW cosine index (partial on `revoked_at is null`).
+  - `identify_customer()` is the only path to `face_templates`; it returns top-1/top-2 with a margin and
+    **never** the vector, and honours `scope` + `expires_at`.
+  - `face_templates_public` view exposes metadata only; the `customer_id = auth.uid()` filter is the
+    security boundary (documented in a `comment on view`).
+  - RLS: deny by default, `revoke all` then explicit grants; `payment_events`, `rate_limits` and
+    `face_templates` have **no** client policies at all.
+  - Kill switch `stores.face_payments_enabled`; `check_rate_limit()` for the functions.
+- `supabase/seed.sql`: one demo store, no fake legal text, no auth users (only Auth should create them).
+- `supabase/tests/rls.test.sql`: pgTAP, 12 assertions across device / customer / anon identities.
+
+**Verified:** static only — 14 tables declared once, `$$` blocks balanced, every table appears in the
+RLS migration, file ordering has no forward references.
+
+**NOT verified:** `bunx supabase db reset`, the 12 RLS assertions, and `identify_customer()` runtime
+behaviour. **`docker` is not installed in this environment**, so `supabase start` cannot run. CLI is
+logged in (project list works) but no project is linked and none was created.
+
+**Deviations:** `legal_documents` stays empty for now; the app renders `apps/web/content/legal/*.md`
+so there is a single source. Phase 3 will copy the accepted versions into the table.
+
+**Known issues / traps:**
+- The first `db reset` is likely to surface small SQL issues (auth.users fixture columns, pgTAP schema
+  qualification). Treat it as the real acceptance step, not a formality.
+- Never run `bunx supabase db push` against a project that is not ours.
+
+**Next:** install Docker (WSL integration) or approve creating a dedicated Supabase project, then run
+`bunx supabase start && bunx supabase db reset && bunx supabase test db` and fix what breaks.
+
 ## 2026-11-14 — Phase 1: monorepo + mock POS UI — agent
 **Intent:** make the whole flow clickable with fixtures, before any Supabase project or pey account
 exists, so the owner can review screens and copy.

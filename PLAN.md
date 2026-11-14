@@ -218,7 +218,8 @@ on request); `phone_e164` is unverified; `payment_events.webhook_id` unique; RLS
 
 ## 7. Phases
 
-Status: Phase 0 done, **Phase 1 done (mock UI)**. Check `MEMOIRS.md` for the current state.
+Status: Phase 0 done, **Phase 1 done (mock UI)**, **Phase 2 SQL written — acceptance pending
+`supabase db reset` (needs Docker or a linked project)**. Check `MEMOIRS.md` for the current state.
 
 | Phase | Deliverable | Acceptance |
 | --- | --- | --- |

@@ -68,6 +68,7 @@ create table public.stores (
   template_expiry_enabled boolean not null default false,
   template_ttl_days integer not null default 365,   -- only used when enabled
   allow_manual_phone_entry boolean not null default false,
+  face_payments_enabled boolean not null default true,   -- kill switch -> QR
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
 );
@@ -118,7 +119,8 @@ create table public.customers (
   id            uuid primary key references auth.users(id) on delete cascade,
   -- Unverified claim until a CoDi push is paid (PLAN.md §1.3). Not unique: two
   -- phones may claim the same number; the face, not the number, is the identity.
-  phone_e164    text not null check (phone_e164 ~ '^\+[1-9][0-9]{7,14}$'),
+  -- nullable until signup collects it; a CLAIM, never verified (PLAN.md §1.3)
+  phone_e164    text check (phone_e164 ~ '^\+[1-9][0-9]{7,14}$'),
   phone_verified_at timestamptz,
   display_name  text,                      -- optional first name; used on the confirm screen
   status        public.customer_status not null default 'active',
@@ -301,6 +303,13 @@ create table public.legal_documents (
 );
 create index legal_documents_lookup_idx on public.legal_documents(slug, locale, published);
 
+-- ── rate limiting ────────────────────────────────────────────────────────────
+create table public.rate_limits (
+  key          text primary key,
+  window_start timestamptz not null default now(),
+  count        integer not null default 0
+);
+
 -- ── helpers ──────────────────────────────────────────────────────────────────
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
@@ -452,7 +461,12 @@ Enforcement notes:
 | `revoke_my_face` | RPC (customer) | soft-delete templates + audit |
 | `delete_my_account` | RPC (customer) | revoke templates, null PII, keep accounting rows anonymized |
 | — | — | *(removed: phone-based retro-linkage needs a verified number; see ADR-014)* |
-| `check_rate_limit` | function | counter per key, windowed |
+| `check_rate_limit` | function | atomic counter per key/window (service_role only) |
+
+Migration files as applied: `20261114120000_extensions`, `…120100_types`, `…120200_tables`,
+`…120300_indexes`, `…120400_functions`, `…120500_rls`, `…120600_realtime`.
+`legal_documents` is created now but stays empty until Phase 3 copies the accepted markdown
+versions into it (the app renders `apps/web/content/legal/*.md` today, so there is one source).
 
 ## 7. Retention
 

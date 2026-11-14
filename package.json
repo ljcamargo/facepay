@@ -9,16 +9,20 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "cd apps/web && bun run dev",
     "build": "cd apps/web && bun run build",
-    "start": "cd apps/web && bun run start",
-    "lint": "cd apps/web && bun run lint",
-    "typecheck": "cd apps/web && bun run typecheck",
-    "test": "cd packages/shared && bun test && cd ../../apps/web && bun run test",
-    "supabase": "bunx supabase",
+    "check:secrets": "bun run scripts/check-secrets.ts",
+    "db:lint": "bunx supabase db lint",
     "db:reset": "bunx supabase db reset",
+    "db:start": "bunx supabase start",
+    "db:stop": "bunx supabase stop",
+    "dev": "cd apps/web && bun run dev",
     "functions:serve": "bunx supabase functions serve --env-file supabase/.env.local",
-    "check:secrets": "bun run scripts/check-secrets.ts"
+    "lint": "cd apps/web && bun run lint",
+    "start": "cd apps/web && bun run start",
+    "supabase": "bunx supabase",
+    "test": "cd packages/shared && bun test && cd ../../apps/web && bun run test",
+    "test:rls": "bunx supabase test db",
+    "typecheck": "cd apps/web && bun run typecheck"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
