@@ -111,18 +111,27 @@ CASHIER                    TABLET (kiosk)                        CUSTOMER PHONE 
 | Face models, thresholds, anti-spoofing | [`docs/06-face-recognition.md`](docs/06-face-recognition.md) |
 | Legal / privacy / threats | [`docs/07-security-privacy.md`](docs/07-security-privacy.md) |
 
-## Quickstart (after Phase 1–2)
+## Quickstart (Phase 1 — mock UI)
 
 ```bash
-corepack enable
-pnpm install
-cp .env.example .env.local          # fill Supabase + pey secrets
-pnpm supabase start                 # local Postgres + Auth + Functions
-pnpm supabase db reset              # apply migrations + seed
-pnpm dev                            # http://localhost:3000/kiosk
+bun install
+bun run dev            # http://localhost:3000/kiosk
 ```
 
-Kiosk URL: `/kiosk` · Pairing: `/kiosk/setup` · Legal: `/legal/privacy`, `/legal/terms`, `/legal/about`
+Phase 1 needs **no env vars**: every screen runs on fixtures. Pairing accepts any 6-digit code,
+the settings PIN is `1234`, and the identification branch (known / unknown / ambiguous) is a switch
+in Ajustes → Modo demo. Walk it in two tabs: the kiosk plus the QR link it prints.
+
+Phase 2 adds the database:
+
+```bash
+cp .env.example .env.local
+bunx supabase start
+bunx supabase db reset
+```
+
+Kiosk: `/kiosk` · Pairing: `/kiosk/setup` · Account: `/mi-cuenta` · Legal: `/legal/privacy`,
+`/legal/terms`, `/legal/about`
 
 ## Hard warnings
 

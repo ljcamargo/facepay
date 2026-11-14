@@ -4,13 +4,13 @@
 
 | Suite | What it proves | Command |
 | --- | --- | --- |
-| Lint / types | no `any` leaks, no unused secrets imports | `pnpm lint && pnpm typecheck` |
-| Unit (pure logic) | money conversion, phone normalization, `numRef`, decision thresholds, concept sanitizing | `pnpm test` |
+| Lint / types | no `any` leaks, no unused secrets imports | `bun run lint && bun run typecheck` |
+| Unit (pure logic) | money conversion, phone normalization, `numRef`, decision thresholds, concept sanitizing | `bun run test` |
 | Schema | migrations apply clean from zero | `supabase db reset` |
-| RLS | anon can't read anything; device A can't read store B; customer can't read another customer; no one can `select embedding` | `pnpm test:rls` (runs `supabase/tests/rls.sql` as 3 identities) |
-| Webhook | valid signature accepted; stale/invalid rejected; duplicate is a no-op; paid transition; late payment | `pnpm test:webhook` (fixtures, no network) |
-| Build | no `service_role` / `PEY_` string in the client bundle | `pnpm build && pnpm check:secrets` |
-| A11y smoke | axe on kiosk + onboarding routes | `pnpm test:a11y` |
+| RLS | anon can't read anything; device A can't read store B; customer can't read another customer; no one can `select embedding` | `bun run test:rls` (runs `supabase/tests/rls.sql` as 3 identities) |
+| Webhook | valid signature accepted; stale/invalid rejected; duplicate is a no-op; paid transition; late payment | `bun run test:webhook` (fixtures, no network) |
+| Build | no `service_role` / `PEY_` string in the client bundle | `bun run build && bun run check:secrets` |
+| A11y smoke | axe on kiosk + onboarding routes | `bun run test:a11y` |
 
 CI never calls pey. Ever. The provider calls are mocked with recorded payloads.
 

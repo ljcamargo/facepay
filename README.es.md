@@ -96,19 +96,28 @@ CAJERO                     TABLET (kiosco)                        CELULAR DEL CL
 | Modelos faciales, umbrales, anti-spoofing | [`docs/06-face-recognition.md`](docs/06-face-recognition.md) |
 | Legal / privacidad / amenazas | [`docs/07-security-privacy.md`](docs/07-security-privacy.md) |
 
-## Inicio rápido (después de Fase 1–2)
+## Inicio rápido (Fase 1 — UI con datos de ejemplo)
 
 ```bash
-corepack enable
-pnpm install
-cp .env.example .env.local          # llena Supabase + secretos de pey
-pnpm supabase start                 # Postgres + Auth + Functions local
-pnpm supabase db reset              # migraciones + seed
-pnpm dev                            # http://localhost:3000/kiosk
+bun install
+bun run dev            # http://localhost:3000/kiosk
 ```
 
-Kiosco: `/kiosk` · Emparejamiento: `/kiosk/setup` · Legal: `/legal/privacy`, `/legal/terms`,
-`/legal/about`
+La Fase 1 **no necesita variables de entorno**: todo corre con datos de ejemplo. El emparejamiento
+acepta cualquier código de 6 dígitos, el PIN de ajustes es `1234` y la rama de identificación
+(conocido / desconocido / dudoso) se cambia en Ajustes → Modo demo. Recórrelo en dos pestañas: el
+kiosco y el enlace QR que muestra.
+
+La Fase 2 agrega la base de datos:
+
+```bash
+cp .env.example .env.local
+bunx supabase start
+bunx supabase db reset
+```
+
+Kiosco: `/kiosk` · Emparejamiento: `/kiosk/setup` · Cuenta: `/mi-cuenta` · Legal: `/legal/privacy`,
+`/legal/terms`, `/legal/about`
 
 ## Advertencias importantes
 

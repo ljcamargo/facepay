@@ -19,6 +19,54 @@ Entry template:
 
 ---
 
+## 2026-11-14 — Phase 1: monorepo + mock POS UI — agent
+**Intent:** make the whole flow clickable with fixtures, before any Supabase project or pey account
+exists, so the owner can review screens and copy.
+
+**Changed:**
+- Toolchain switched **pnpm → bun** (owner's preference). `pnpm-workspace.yaml` removed; workspaces live
+  in the root `package.json`; `bun.lockb` committed. Netlify build set to Bun (`BUN_VERSION`).
+- `packages/shared`: domain types, money (integer cents + amount pad), phone (E.164 ↔ pey 10-digit,
+  masking), constants (pilot limit $300, face thresholds, doc version), demo fixtures, and the typed
+  es-MX copy deck (`i18n/es.ts`). 12 unit tests.
+- `apps/web`: Next.js 15 App Router, Tailwind v4 + semantic tokens, light/dark/auto via `next-themes`,
+  shadcn-style primitives (button, card, input, badge, switch), lucide icons.
+- Screens: `/kiosk` (home), `/kiosk/setup` (pairing), `/kiosk/checkout` (amount pad + optional concept),
+  `/kiosk/identify` (simulated camera + challenge + ephemeral vector bars), `/kiosk/confirm`,
+  `/kiosk/fallback` (register QR / CoDi QR / pay by phone), `/kiosk/pay/[txId]`, `/kiosk/receipt/[txId]`,
+  `/kiosk/history`, `/kiosk/settings` (PIN 1234, demo face outcome), `/onboarding/[token]` (4 steps, no
+  OTP), `/pay/[txId]` (phone side), `/mi-cuenta`, `/legal/[slug]`.
+- `apps/web/content/legal/*.md`: draft aviso, consentimiento, términos and acerca-de, with `{{…}}`
+  placeholders rendered as a "borrador" warning with the exact list of pending fields.
+- Mock adapter (`src/lib/mock.ts`) mirrors the Edge Function contract: transactions, identification
+  outcomes, push/QR simulation, onboarding sessions shared across tabs via `localStorage`.
+
+**Decisions:** no camera/face engine yet (Phase 4); the identification screen is a deliberate
+placeholder with the real copy and the real privacy statement. Concept falls back to the store name.
+The mock badge is visible on every kiosk screen.
+
+**Verified:**
+- `bun install` → 169 packages, `bun.lockb` written.
+- `bun run typecheck` clean; `bun run build` → 17 routes, no warnings.
+- `bun test` in `packages/shared` → 12 pass.
+- `bun run dev` → all 15 routes return 200, no server errors.
+- Legal pages render and flag placeholders.
+
+**Deviations:** `lint` is `tsc --noEmit` for now; ESLint/Prettier land in Phase 11 to avoid a second
+config surface before there is behaviour worth linting.
+
+**Known issues / traps:**
+- **Do not run `next build` while `next dev` is running**: they share `.next` and the dev server starts
+  throwing `Cannot find module './vendor-chunks/...'`. Delete `.next` and restart.
+- Mock timers live in the tab that scheduled the payment. If the phone tab is closed right after paying,
+  the kiosk keeps waiting until "Ya pagué, actualizar".
+- `localStorage` is shared by design so the kiosk and the "phone" tab can talk; two demo runs in the
+  same browser share state — use Ajustes → Reiniciar demo.
+- No `git push` from the agent; the owner pushes.
+
+**Next:** owner reviews the mock UI, then approves Phase 2 (Supabase schema + RLS). Phase 2 needs
+`bunx supabase login` — the stored token is currently invalid.
+
 ## 2026-11-14 — Phase 0 rev3: decisions locked, mock-first, commit — human + agent
 **Intent:** close the open questions so the plan stops moving, and make the first committed artifact
 the docs (not code).

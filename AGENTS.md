@@ -80,7 +80,7 @@ Read `PLAN.md` for scope, `docs/10-decisions.md` for the *why*, `MEMOIRS.md` for
 2. Check `MEMOIRS.md` for the last known state (it may contradict a stale doc — trust the log).
 3. If a decision is needed: write the ADR **first**, get a yes, then code.
 4. Implement in vertical slices: DB → function → UI → failure path → test.
-5. Verify: `pnpm lint && pnpm typecheck && pnpm test`. For DB: `pnpm supabase db reset` from scratch.
+5. Verify: `bun run lint && bun run typecheck && bun run test`. For DB: `bun run db:reset` from scratch.
 6. Manually run the phase's demo script (`docs/12-testing.md`) and paste the result in the note.
 7. Append to `MEMOIRS.md`, update the phase table in `PLAN.md` (status only), commit.
 
@@ -123,6 +123,6 @@ traps: <bullets>
 - [ ] Failure paths implemented (not `console.error` placeholders)
 - [ ] Spanish copy reviewed; no hardcoded strings outside the i18n file
 - [ ] RLS verified from a second identity (device vs customer vs anon)
-- [ ] No secrets, no `service_role` in client bundle (`pnpm build` + grep the output)
+- [ ] No secrets, no `service_role` in client bundle (`bun run build` + grep the output)
 - [ ] `MEMOIRS.md` entry added; docs updated if behaviour changed
 - [ ] New dependency justified; license OK

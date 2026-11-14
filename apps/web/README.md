@@ -43,11 +43,11 @@ context, so a refresh never loses a transaction id.
 ## Commands (after Phase 1)
 
 ```bash
-pnpm dev            # http://localhost:3000/kiosk
-pnpm build
-pnpm lint
-pnpm typecheck
-pnpm test
+bun run dev            # http://localhost:3000/kiosk
+bun run build
+bun run lint
+bun run typecheck
+bun run test
 ```
 
 ## Kiosk checklist

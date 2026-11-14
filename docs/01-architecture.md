@@ -121,8 +121,8 @@ instead of breaking.
 ## 7. Local development topology
 
 ```
-pnpm dev                → Next.js :3000
-pnpm supabase start     → API :54321, DB :54322, Studio :54323, Functions :54321/functions/v1
+bun run dev                → Next.js :3000
+bunx supabase start     → API :54321, DB :54322, Studio :54323, Functions :54321/functions/v1
 ngrok / cloudflared     → public webhook URL for pey (pey requires HTTPS)
 ```
 pey webhooks can only point at a public HTTPS URL configured in their portal, so local webhook work

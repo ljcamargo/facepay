@@ -218,6 +218,8 @@ on request); `phone_e164` is unverified; `payment_events.webhook_id` unique; RLS
 
 ## 7. Phases
 
+Status: Phase 0 done, **Phase 1 done (mock UI)**. Check `MEMOIRS.md` for the current state.
+
 | Phase | Deliverable | Acceptance |
 | --- | --- | --- |
 | **0** | Docs, scaffold, bilingual plan, `netlify.toml`, `.env.example` | approved; `package.json` valid |

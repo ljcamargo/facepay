@@ -1,6 +1,6 @@
 # 09 — Runbook
 
-Commands assume `pnpm` and a checkout at the repo root. Nothing here is final until Phase 1–2 land;
+Commands assume `bun` and a checkout at the repo root. Nothing here is final until Phase 1–2 land;
 update it as soon as a command changes.
 
 ## 1. Prerequisites
@@ -8,8 +8,8 @@ update it as soon as a command changes.
 | Tool | Version | Notes |
 | --- | --- | --- |
 | Node | 22 LTS | `.nvmrc` |
-| pnpm | 9+ | `corepack enable` |
-| Supabase CLI | latest | `brew install supabase/tap/supabase` or `npx supabase` |
+| bun | 1.1+ | `curl -fsSL https://bun.sh/install \| bash` |
+| Supabase CLI | latest | `bunx supabase ...` (no global install needed) |
 | Docker | running | needed by `supabase start` |
 | Deno | 2.x | optional; the CLI bundles it for functions |
 | tunnel | `cloudflared` or `ngrok` | pey webhooks need a public HTTPS URL |
@@ -45,15 +45,15 @@ Never commit any of these. `.env.example` lists names with empty values only.
 
 ```bash
 git clone <repo> && cd facepay-mx
-corepack enable && pnpm install
+bun install
 cp .env.example .env.local
 
-supabase login
-supabase link --project-ref <staging-ref>
-supabase start                 # Postgres :54322, API :54321, Studio :54323
-supabase db reset              # applies migrations + seed
-supabase functions serve --env-file supabase/.env.local
-pnpm dev                       # http://localhost:3000/kiosk
+bunx supabase login
+bunx supabase link --project-ref <staging-ref>
+bunx supabase start            # Postgres :54322, API :54321, Studio :54323
+bunx supabase db reset         # applies migrations + seed
+bunx supabase functions serve --env-file supabase/.env.local
+bun run dev                       # http://localhost:3000/kiosk
 ```
 
 Seed creates: one store ("Café Centro"), one owner (`owner@example.test` / password from

@@ -1,6 +1,6 @@
 # scripts/
 
-Operational and development helpers. Run with `pnpm tsx scripts/<name>.ts`. Nothing here runs in
+Operational and development helpers. Run with `bun scripts/<name>.ts`. Nothing here runs in
 production automatically.
 
 | Script | Phase | Purpose |

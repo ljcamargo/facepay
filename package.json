@@ -1,28 +1,30 @@
 {
   "name": "facepay-mx",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Face-linked POS payments for Mexico over CoDi (pey.mx API)",
   "license": "UNLICENSED",
-  "engines": {
-    "node": ">=22"
-  },
-  "packageManager": "pnpm@9.15.0",
-  "scripts": {
-    "dev": "pnpm --filter @facepay/web dev",
-    "build": "pnpm --filter @facepay/web build",
-    "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
-    "test:rls": "supabase test db",
-    "supabase": "supabase",
-    "db:reset": "supabase db reset",
-    "db:push": "supabase db push",
-    "functions:serve": "supabase functions serve --env-file supabase/.env.local",
-    "check:secrets": "tsx scripts/check-secrets.ts"
-  },
   "workspaces": [
     "apps/web",
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "dev": "cd apps/web && bun run dev",
+    "build": "cd apps/web && bun run build",
+    "start": "cd apps/web && bun run start",
+    "lint": "cd apps/web && bun run lint",
+    "typecheck": "cd apps/web && bun run typecheck",
+    "test": "cd packages/shared && bun test && cd ../../apps/web && bun run test",
+    "supabase": "bunx supabase",
+    "db:reset": "bunx supabase db reset",
+    "functions:serve": "bunx supabase functions serve --env-file supabase/.env.local",
+    "check:secrets": "bun run scripts/check-secrets.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "bun": ">=1.1"
+  }
 }
