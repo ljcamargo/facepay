@@ -1,19 +1,17 @@
 # Netlify configuration — FacePay MX
 # Docs: https://docs.netlify.com/frameworks/next-js/overview/
 #
-# Monorepo rules (verified against Netlify's docs and the Next runtime source):
-#   • Base directory:        leave EMPTY (repo root) so `bun install` finds bun.lockb
-#   • Package directory:     leave EMPTY
-#   • Build command:         taken from here
-#   • Publish directory:     apps/web/.next  ← the runtime derives the app dir from it
-# This file covers Base directory = repo root. If Netlify's monorepo detection sets
-# Base directory = apps/web (the usual result of picking the app in the UI), the
-# config in apps/web/netlify.toml is used instead and this one is ignored.
-# Keep the two files in sync (headers, env, plugin).
+# This site runs with Base directory = apps/web (Netlify's monorepo detection set
+# it, and the API refuses to clear it). Netlify reads this root file and resolves
+# `publish` relative to the base, so:
+#   • the command walks up to the repo root, where bun.lockb and the scripts live
+#   • publish ".next" resolves to apps/web/.next
+# If the Base directory is ever cleared, change these two lines back to
+#   command = "bun install --frozen-lockfile && ..."   publish = ".next" 
 
 [build]
-  command = "bun install --frozen-lockfile && bun run models:sync && bun run check:env && bun run build"
-  publish = "apps/web/.next"
+  command = "cd ../.. && bun install --frozen-lockfile && bun run models:sync && bun run check:env && bun run build"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "22"
