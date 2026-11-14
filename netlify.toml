@@ -6,7 +6,8 @@
   # Netlify installs workspace dependencies from the repo root automatically
   # (bun.lockb at the root, package.json workspaces).
   base = "apps/web"
-  command = "bun run build"
+  # models are gitignored (~16 MB): fetch before building
+  command = "bun run models:sync && bun run build"
   publish = ".next"
 
 [build.environment]

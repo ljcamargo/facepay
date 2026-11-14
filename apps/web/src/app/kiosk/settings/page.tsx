@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, RotateCcw, Unplug } from 'lucide-react';
 import {
@@ -184,7 +185,15 @@ export default function SettingsPage() {
             >
               <RotateCcw className="size-4" aria-hidden /> {t('kiosk.settings.reset')}
             </Button>
-            <p className="text-xs text-muted-foreground">v0.1.0 · Fase 1 (mock)</p>
+            <p className="text-xs text-muted-foreground">v0.2.0 · Fase 4 (motor facial)</p>
+            <div className="mt-2 flex flex-col gap-1 text-xs">
+              <Link href="/dev/face" className="text-primary underline-offset-4 hover:underline">
+                Probador de cámara
+              </Link>
+              <Link href="/dev/calibrate" className="text-primary underline-offset-4 hover:underline">
+                Calibración de umbral
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

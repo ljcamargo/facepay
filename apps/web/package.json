@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@facepay/face-engine": "workspace:*",
     "@facepay/shared": "workspace:*",
     "@supabase/supabase-js": "^2.119.0",
     "clsx": "^2.1.1",

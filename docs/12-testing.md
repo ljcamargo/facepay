@@ -108,6 +108,35 @@ made (Phase 8). The kiosk still runs on fixtures with `NEXT_PUBLIC_MOCK_MODE=tru
 | revoked device | revoke in DB mid-flow | kiosk wipes state and shows pairing |
 | wrong store | replay a device JWT against another store's tx | 403/404, no data |
 
+## 4.5 Phase 4 — face engine on the real tablet
+
+```bash
+bun run models:sync        # ~16 MB, once
+bun run dev
+```
+
+Open `/dev/face` (link at the bottom of Ajustes) on the tablet:
+
+| Check | Pass criteria |
+| --- | --- |
+| Backend | `webgl` (not `cpu`) |
+| FPS | ≥ 10 at 640×480 |
+| Gates at 40–80 cm | all `ok` with normal store light |
+| Each challenge | blink / turn / smile / approach satisfied within 4 s; hands needs 2 fingers |
+| Capture | 1024 dims, hash shown, ≤ 400 ms |
+| Two faces | `single_face` fails with the "más de una persona" hint |
+| Hands off | hand signals stay 0 and challenges still work |
+
+Then open `/dev/calibrate`, drop ≥ 10 people × 2 consented photos named `persona__*.jpg`:
+
+| Check | Pass criteria |
+| --- | --- |
+| Report | EER and a recommended `t` are shown |
+| Target | FAR ≤ 0.1 % with FRR ≤ 5 % |
+| Action | paste the JSON into `docs/calibration/YYYY-MM-DD-<device>.md` and update the thresholds |
+
+If the target is not reachable, stop and switch the engine (docs/06 §4.1) before Phase 5.
+
 ## 5. Calibration (Phase 4 and after any model change)
 
 `scripts/calibrate.ts` reads a CSV of local image paths (never committed), computes embeddings, and

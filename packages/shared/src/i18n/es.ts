@@ -50,6 +50,7 @@ export const es = {
   'kiosk.identify.challenge.turnRight': 'Reto: gira lentamente a la derecha',
   'kiosk.identify.challenge.smile': 'Reto: sonríe',
   'kiosk.identify.challenge.hands': 'Reto: muestra 2 dedos',
+  'kiosk.identify.challenge.approach': 'Reto: acércate un poco',
   'kiosk.identify.privacy':
     'Tu rostro no se guarda como foto. Solo calculamos una plantilla matemática de 1024 números que no se puede revertir a una imagen.',
   'kiosk.identify.useQr': 'Usar QR en su lugar',
@@ -58,6 +59,8 @@ export const es = {
   'kiosk.identify.hint.dark': 'Hay poca luz',
   'kiosk.identify.hint.still': 'Mantén el rostro quieto',
   'kiosk.identify.hint.center': 'Mira de frente',
+  'kiosk.identify.hint.occluded': 'Quítate lentes oscuros o cubrebocas',
+  'kiosk.identify.hint.bright': 'Hay demasiada luz de frente',
   'kiosk.identify.noCamera': 'No pudimos abrir la cámara.',
   'kiosk.identify.vectorNote': 'plantilla en memoria',
   'kiosk.identify.vectorNoteOff': 'no se envía a la pantalla',

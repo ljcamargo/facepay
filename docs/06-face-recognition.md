@@ -114,6 +114,25 @@ Calibration (`scripts/calibrate.ts`, offline, no PII in the repo):
 Expected reality: HSE FaceRes is good but not ArcFace-grade. If measured FAR at an acceptable FRR is
 worse than 1 %, switch to MediaPipe + ArcFace 512-d **before** the pilot, not after.
 
+## 4.1 Harness and calibration UI (Phase 4)
+
+Two dev-only routes exist so thresholds are measured on the real tablet, not guessed:
+
+| Route | What it does |
+| --- | --- |
+| `/dev/face` | camera on/off, backend (`webgl`/`wasm`), fps, live gate results with the customer hint, each liveness challenge, ephemeral vector bars + hash + timing, and a JSON dump of the signals |
+| `/dev/calibrate` | drop a folder of `persona__*.jpg` files → genuine vs impostor similarity distributions, FAR/FRR curve, EER, and the lowest threshold with FAR ≤ 0.1 % |
+
+Model files are gitignored (~16 MB) and downloaded with `bun run models:sync` (Netlify runs it before
+`next build`). If they are missing the harness says so instead of hanging.
+
+Read the numbers, then change `DEFAULT_THRESHOLDS` in `packages/face-engine/src/gates.ts` and
+`FACE` in `packages/shared/src/constants.ts`. A threshold change is a code change with a report
+attached, not a settings toggle.
+
+**Decision gate:** if the calibrated operating point cannot reach FAR ≤ 0.1 % with FRR ≤ 5 % on the
+real device, switch to MediaPipe + ArcFace (same `FaceEngine` interface) before Phase 5, not after.
+
 ## 5. Model delivery and performance
 
 - Self-host the model files under `apps/web/public/models/human/` (pey-free, no CDN dependency,

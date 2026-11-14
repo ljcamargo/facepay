@@ -19,6 +19,46 @@ Entry template:
 
 ---
 
+## 2026-11-14 — Phase 4: face engine, gates, liveness, calibration — agent
+**Intent:** replace the animated placeholder with the real capture pipeline, and make the accuracy
+decision measurable instead of a guess.
+
+**Changed:**
+- New package `packages/face-engine` behind a `FaceEngine` interface (analyze / embed / dispose):
+  `@vladmandic/human` adapter, self-hosted models, lazy load, one detect per frame.
+- Pure, tested modules: `gates.ts` (single face, size, frontal, sharpness via Laplacian variance,
+  exposure, occlusion, inside frame + weighted quality score) and `challenge.ts` (blink / turn / smile
+  / hands / approach as a 4 s state machine). **22 unit tests**, no camera needed.
+- `scripts/sync-models.ts`: downloads 16.4 MB of models into `apps/web/public/models/human/`
+  (gitignored), prints checksums, supports `--check`. Netlify runs it before `next build`.
+- Dev harnesses: `/dev/face` (camera, fps, backend, live gates + customer hint, challenges, capture
+  with hash/timing) and `/dev/calibrate` (local images → FAR/FRR curve, EER, recommended threshold,
+  JSON report). Both links at the bottom of Ajustes.
+- `next.config.ts`: `serverExternalPackages` + `@tensorflow/tfjs-node` alias, because Human ships a
+  Node build that Next tried to bundle for SSR.
+
+**Verified:**
+- `bun run test` → 22 pass (gates 13, challenge 9).
+- `bun run typecheck` clean; `bun run build` green, `/dev/*` prerendered.
+- Models downloaded and checksummed; the sync script re-runs idempotently.
+
+**NOT verified:** the camera path itself — no webcam in this environment. The harness exists precisely
+so the owner can read backend/fps/gates on the tablet. Thresholds remain **priors** until a
+calibration report is attached.
+
+**Deviations:** hands ship behind `hands: true` (off by default) because they add ~8 MB and we have not
+seen them run. The challenge state machine already counts fingers.
+
+**Known issues / traps:**
+- `/dev/*` routes are public in the deploy. They write nothing, but Phase 11 should gate them.
+- `human.detect` returns radians in `rotation.angle`; the adapter converts to degrees. If a gate
+  behaves oddly, verify the conversion in `/dev/face` before touching thresholds.
+- `smile` is a mesh-distance proxy, not a classifier: it needs the on-device check.
+- If FAR ≤ 0.1 % is unreachable at FRR ≤ 5 %, switch to MediaPipe + ArcFace *before* Phase 5.
+
+**Next:** Phase 5 — real enrollment on the phone (consent → capture → unit-normalized template stored
+via an Edge Function), revoke and re-enroll, and `/mi-cuenta` showing the real template.
+
 ## 2026-11-14 — Phase 3: real customer identity + consent — agent
 **Intent:** stop faking the identity layer. From here on, a real person has a real row and a real,
 evidenced consent, while the kiosk keeps running on fixtures.

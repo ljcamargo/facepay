@@ -18,9 +18,10 @@
     "dev": "cd apps/web && bun run dev",
     "functions:serve": "bunx supabase functions serve --env-file supabase/.env.local",
     "lint": "cd apps/web && bun run lint",
+    "models:sync": "bun scripts/sync-models.ts",
     "start": "cd apps/web && bun run start",
     "supabase": "bunx supabase",
-    "test": "cd packages/shared && bun test && cd ../../apps/web && bun run test",
+    "test": "cd packages/shared && bun test && cd ../face-engine && bun test",
     "test:rls": "bunx supabase test db",
     "test:rls:remote": "bun scripts/test-rls.ts",
     "typecheck": "cd apps/web && bun run typecheck"
