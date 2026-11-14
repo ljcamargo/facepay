@@ -14,6 +14,59 @@
 
 CI never calls pey. Ever. The provider calls are mocked with recorded payloads.
 
+## 1.5 Phase 2 — database smoke test (no Docker)
+
+Phase 2 is backend only, so there are three ways to verify it. All are read-only.
+
+### A. Run the RLS contract yourself
+
+```bash
+export SUPABASE_DB_URL='postgresql://postgres.<ref>:<PW>@aws-0-us-east-1.pooler.supabase.com:5432/postgres'
+bun run test:rls:remote     # expects: 12 assertions, 0 failures
+```
+
+(`bunx supabase test db --remote` also works but shells out to Docker for `pg_prove`.)
+
+### B. Paste `supabase/tests/smoke-phase2.sql` into the SQL Editor
+
+Expected results, in order:
+
+| # | Check | Expected |
+| --- | --- | --- |
+| 1 | inventory | 14 tables · 1 view · 8 migrations · 1 store |
+| 2 | seed | `Café Centro`, `pilot_limit_cents = 30000`, expiry off, face on |
+| 3 | RLS | 14 / 14 tables with RLS |
+| 4 | no-policy tables | `face_templates`, `payment_events`, `rate_limits` |
+| 5 | grants | anon ✗ · authenticated ✗ on templates, ✓ on the metadata view |
+| 6 | `identify_customer` | one row, `decision = no_match` |
+| 7 | index | `face_templates_embedding_idx … USING hnsw … WHERE revoked_at IS NULL` |
+| 8 | policies | device, customer and staff policies only |
+
+### C. Prove it from outside, with the anon key
+
+```bash
+export SUPA=https://<ref>.supabase.co
+export ANON=<NEXT_PUBLIC_SUPABASE_ANON_KEY>
+
+# anon cannot read operational tables
+curl -s "$SUPA/rest/v1/transactions?select=id" -H "apikey: $ANON" -H "Authorization: Bearer $ANON"
+# {"code":"42501","message":"permission denied for table transactions"}
+
+curl -s "$SUPA/rest/v1/face_templates?select=id" -H "apikey: $ANON" -H "Authorization: Bearer $ANON"
+# {"code":"42501",...}
+
+# published legal text only — nothing is published yet, so an empty array
+curl -s "$SUPA/rest/v1/legal_documents?select=slug" -H "apikey: $ANON" -H "Authorization: Bearer $ANON"
+# []
+```
+
+The anon key is public by design; the 42501 responses are the RLS contract doing its job.
+
+### What is NOT testable yet
+
+No UI is wired to the database (Phase 3), no Edge Function exists (Phases 6–9) and no pey call is
+made (Phase 8). The kiosk still runs on fixtures with `NEXT_PUBLIC_MOCK_MODE=true`.
+
 ## 2. Manual, per-phase acceptance
 
 | Phase | Script | Pass criteria |
