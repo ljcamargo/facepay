@@ -1,0 +1,44 @@
+# dependencies
+node_modules/
+.pnpm-store/
+.pnp.*
+
+# builds
+.next/
+out/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# env & secrets
+.env
+.env.*
+!.env.example
+supabase/.env.local
+supabase/.env.*
+!.env.example
+
+# tooling
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+coverage/
+playwright-report/
+test-results/
+
+# supabase local state
+supabase/.branches/
+supabase/.temp/
+.branches/
+
+# model artifacts & calibration data (never commit biometrics or large binaries)
+apps/web/public/models/
+scripts/calibration-data/
+docs/calibration/*.csv
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

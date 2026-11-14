@@ -1,0 +1,58 @@
+# Netlify configuration — FacePay MX
+# Monorepo: the Next.js app lives in apps/web; Supabase provides the backend.
+# Docs: https://docs.netlify.com/frameworks/next-js/overview/
+
+[build]
+  # Netlify installs workspace dependencies from the repo root automatically
+  # because pnpm-workspace.yaml exists at the root.
+  base = "apps/web"
+  command = "pnpm build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+  # Keep the Next.js version pinned by the lockfile at the repo root.
+
+# Official Next.js runtime (App Router, Route Handlers, ISR, middleware).
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[dev]
+  command = "pnpm dev"
+  targetPort = 3000
+  framework = "next"
+
+# ── Security headers ─────────────────────────────────────────────────────────
+# The kiosk needs the camera; everything else is denied by default.
+# CSP notes:
+#   'wasm-unsafe-eval'  → TensorFlow.js / ONNX Runtime WebAssembly
+#   worker-src blob:    → TFJS web workers
+#   data:/blob: img-src → QR rendering + model canvases
+#   supabase domains    → REST, Auth, Realtime (wss)
+# Tighten with nonces once the CSP is verified against a production build.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-DNS-Prefetch-Control = "off"
+    Permissions-Policy = "camera=(self), microphone=(), geolocation=(), payment=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+# Face models are immutable and large: cache them hard for kiosk offline-ish behaviour.
+[[headers]]
+  for = "/models/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# If the workspace install ever fails to run from the repo root, replace the
+# build command above with:
+#   command = "cd ../.. && pnpm install --frozen-lockfile && cd apps/web && pnpm build"
