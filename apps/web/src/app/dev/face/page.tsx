@@ -78,6 +78,16 @@ export default function FaceHarnessPage() {
     setError(null);
     setLoading(true);
     try {
+      // getUserMedia only exists in a secure context. Plain-HTTP LAN URLs (e.g.
+      // http://192.168.x.x:3000) look like they work until this line throws.
+      if (!window.isSecureContext) {
+        throw new Error(
+          'INSECURE_CONTEXT: la cámara requiere HTTPS. Abre la versión de Netlify o corre bun run dev:https.',
+        );
+      }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Este navegador no expone getUserMedia.');
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 1280, height: 720, facingMode: 'user' },
         audio: false,
@@ -96,9 +106,11 @@ export default function FaceHarnessPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(
-        message.includes('models')
-          ? 'Faltan los modelos. Corre: bun run models:sync'
-          : `No pudimos iniciar: ${message}`,
+        message.includes('INSECURE_CONTEXT')
+          ? 'La cámara requiere HTTPS (no http:// en LAN). Usa la URL de Netlify o bun run dev:https.'
+          : message.includes('models')
+            ? 'Faltan los modelos. Corre: bun run models:sync'
+            : `No pudimos iniciar: ${message}`,
       );
       stop();
     } finally {
