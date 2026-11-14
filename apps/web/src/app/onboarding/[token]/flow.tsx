@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { CameraStage } from '@/components/camera-stage';
 import { StepProgress } from '@/components/step-progress';
 import { MockBadge } from '@/components/mock-badge';
+import { Badge } from '@/components/ui/badge';
 import { createTxFromSession, getSession, sendPush } from '@/lib/mock';
 import { ensureSession, recordConsent, savePhone } from '@/lib/db';
 import { hasSupabase } from '@/lib/supabase';
@@ -156,7 +157,7 @@ export function OnboardingFlow({ token, legal }: Props) {
             {session.storeName} · {formatMxn(session.amountCents)}
           </p>
         </div>
-        <MockBadge />
+        {hasSupabase ? <Badge tone="success">{t('miCuenta.realBadge')}</Badge> : <MockBadge />}
       </header>
 
       <StepProgress step={stepNumber} total={steps.length} label={t('onboarding.phone.title')} />
