@@ -41,24 +41,41 @@ Supabase secrets (`supabase secrets set --env-file supabase/.env.production`):
 
 Never commit any of these. `.env.example` lists names with empty values only.
 
-## 3. First-time local setup
+## 3. First-time setup (cloud project — no Docker)
+
+Docker is **only** needed for the local stack (`supabase start`). This project runs against a
+dedicated cloud project; migrations and RLS tests work without a container runtime.
 
 ```bash
 git clone <repo> && cd facepay-mx
 bun install
-cp .env.example .env.local
+cp .env.example apps/web/.env.local     # fill the two public Supabase values
 
+# one-time
 bunx supabase login
-bunx supabase link --project-ref <staging-ref>
-bunx supabase start            # Postgres :54322  (needs Docker), API :54321, Studio :54323
-bunx supabase db reset         # applies migrations + seed
-bunx supabase test db          # RLS contract (pgTAP)
-bunx supabase functions serve --env-file supabase/.env.local
-bun run dev                       # http://localhost:3000/kiosk
+bunx supabase link --project-ref <ref>   # reads SUPABASE_DB_PASSWORD if exported
+
+# apply schema + seed to the linked project
+SUPABASE_DB_PASSWORD=... bunx supabase db push --remote --include-seed --yes
+
+# RLS contract without Docker
+# (`supabase test db --remote` shells out to Docker for pg_prove; this runner does not)
+SUPABASE_DB_URL='postgresql://postgres.<ref>:<pw>@aws-0-us-east-1.pooler.supabase.com:5432/postgres' \
+  bun run test:rls:remote
+
+bun run dev                              # http://localhost:3000/kiosk
 ```
 
-Seed creates: one store ("Café Centro"), one owner (`owner@example.test` / password from
-`supabase/seed.sql`), one device in `pending`, and the `legal_documents` drafts.
+Notes:
+- The DB password is **not** stored in the repo. Keep it in a password manager; export
+  `SUPABASE_DB_PASSWORD` per shell.
+- `SUPABASE_DB_URL` is the pooler URL (session mode, port 5432), also not committed.
+- `bunx supabase db reset --remote` would drop the schema. Don't. To re-apply from zero on a
+  throwaway project, create a new project instead.
+- Optional local stack: `bunx supabase start` (needs Docker) then `bunx supabase db reset`.
+
+Seed creates one store. Staff and devices are not seeded: they need `auth.users` rows, which only
+the Auth API should create.
 
 ## 4. Pointing pey at a local webhook
 

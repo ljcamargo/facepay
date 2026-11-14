@@ -19,6 +19,42 @@ Entry template:
 
 ---
 
+## 2026-11-14 — Phase 2b: remote project created, schema applied, RLS green — agent
+**Intent:** close Phase 2 without Docker, per the owner's preference.
+
+**Changed:**
+- Created a **new** Supabase project `facepay-mx-dev` (`wwdzuhhghzygxrfgdhbo`, us-east-1, free plan).
+  The unrelated projects in the org were not touched. `knki` was removed by the owner, not by us.
+- `bunx supabase link` + `db push --remote --include-seed`: 8 migrations + seed applied.
+- `supabase test db --remote` still shells out to Docker for pg_prove, so `scripts/test-rls.ts` runs
+  the same pgTAP file through `postgres` (pure JS) and parses the TAP lines. No container needed.
+- `apps/web/.env.local` holds the public URL + anon key (gitignored). The DB password is **not** in the
+  repo; it was printed once and must live in a password manager.
+- Docs updated: README (both languages) and `docs/09` now describe the cloud-only workflow.
+
+**Bug found by the tests (and fixed):**
+`identify_customer()` raised `42702 column reference "customer_id" is ambiguous` on first call:
+plpgsql resolved the name to the OUT parameter instead of the CTE column. Fixed in a **new** migration
+`20261114120700_fix_identify_ambiguity.sql` with `#variable_conflict use_column` and table aliases.
+The applied migration was not edited.
+
+**Verified:**
+```
+1..12
+ok 1..12                     (device / customer / anon)
+12 assertions, 0 failures
+```
+
+**Known issues / traps:**
+- `supabase test db --remote` is Docker-backed; use `bun run test:rls:remote` (needs `SUPABASE_DB_URL`).
+- `db reset --remote` drops the schema. To rebuild from zero, create a throwaway project.
+- Free plan: no `--size` flag on `projects create` (it errors with `entitlement_required`).
+- The pooler host is `aws-0-us-east-1.pooler.supabase.com`, session mode 5432.
+
+**Next:** Phase 3 — wire the web app to real Supabase Auth (anonymous session on the customer's phone),
+consent capture with document version + hash, `/mi-cuenta` backed by the real rows, and template
+deletion.
+
 ## 2026-11-14 — Phase 2: schema + RLS written, execution blocked on Docker — agent
 **Intent:** create the database contract the Edge Functions will rely on.
 

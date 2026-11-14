@@ -122,12 +122,14 @@ Phase 1 needs **no env vars**: every screen runs on fixtures. Pairing accepts an
 the settings PIN is `1234`, and the identification branch (known / unknown / ambiguous) is a switch
 in Ajustes → Modo demo. Walk it in two tabs: the kiosk plus the QR link it prints.
 
-Phase 2 adds the database:
+Phase 2 adds the database. No Docker required — it runs against a dedicated Supabase project:
 
 ```bash
-cp .env.example .env.local
-bunx supabase start
-bunx supabase db reset
+bunx supabase login
+bunx supabase link --project-ref <ref>
+SUPABASE_DB_PASSWORD=... bunx supabase db push --remote --include-seed --yes
+SUPABASE_DB_URL='postgresql://postgres.<ref>:<pw>@aws-0-us-east-1.pooler.supabase.com:5432/postgres' \
+  bun run test:rls:remote
 ```
 
 Kiosk: `/kiosk` · Pairing: `/kiosk/setup` · Account: `/mi-cuenta` · Legal: `/legal/privacy`,

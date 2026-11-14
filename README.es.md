@@ -108,12 +108,14 @@ acepta cualquier código de 6 dígitos, el PIN de ajustes es `1234` y la rama de
 (conocido / desconocido / dudoso) se cambia en Ajustes → Modo demo. Recórrelo en dos pestañas: el
 kiosco y el enlace QR que muestra.
 
-La Fase 2 agrega la base de datos:
+La Fase 2 agrega la base de datos. No hace falta Docker: corre contra un proyecto dedicado de Supabase.
 
 ```bash
-cp .env.example .env.local
-bunx supabase start
-bunx supabase db reset
+bunx supabase login
+bunx supabase link --project-ref <ref>
+SUPABASE_DB_PASSWORD=... bunx supabase db push --remote --include-seed --yes
+SUPABASE_DB_URL='postgresql://postgres.<ref>:<pw>@aws-0-us-east-1.pooler.supabase.com:5432/postgres' \
+  bun run test:rls:remote
 ```
 
 Kiosco: `/kiosk` · Emparejamiento: `/kiosk/setup` · Cuenta: `/mi-cuenta` · Legal: `/legal/privacy`,
