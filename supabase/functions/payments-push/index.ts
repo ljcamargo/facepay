@@ -87,10 +87,10 @@ Deno.serve(async (req) => {
     });
 
     if (!result.ok) {
-      log('payment.pey_error', { requestId: rid, tx: tx.id, type: result.type, status: result.status });
+      log('payment.pey_error', { requestId: rid, tx: tx.id, type: result.type, status: result.status, providerMessage: result.message });
       await admin
         .from('transactions')
-        .update({ status: 'failed', metadata: { peyError: { type: result.type, status: result.status, requestId: rid } } })
+        .update({ status: 'failed', metadata: { peyError: { type: result.type, status: result.status, message: result.message, requestId: rid } } })
         .eq('id', tx.id);
       await admin.from('audit_log').insert({
         actor_type: 'system',
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
         action: 'payment.push_pey_error',
         entity: 'transactions',
         entity_id: tx.id,
-        data: { type: result.type, status: result.status, requestId: rid },
+        data: { type: result.type, status: result.status, message: result.message, requestId: rid },
       });
       return json(
         {

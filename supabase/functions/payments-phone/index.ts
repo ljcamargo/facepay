@@ -112,11 +112,11 @@ Deno.serve(async (req) => {
     });
 
     if (!result.ok) {
-      log('payment.phone_error', { requestId: rid, tx: tx.id, type: result.type, status: result.status });
+      log('payment.phone_error', { requestId: rid, tx: tx.id, type: result.type, status: result.status, providerMessage: result.message });
       // Durable evidence: the dashboard log expires, this does not.
       await admin
         .from('transactions')
-        .update({ metadata: { peyError: { type: result.type, status: result.status, requestId: rid } } })
+        .update({ metadata: { peyError: { type: result.type, status: result.status, message: result.message, requestId: rid } } })
         .eq('id', tx.id);
       await admin.from('audit_log').insert({
         actor_type: 'system',
@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
         action: 'payment.phone_pey_error',
         entity: 'transactions',
         entity_id: tx.id,
-        data: { type: result.type, status: result.status, requestId: rid },
+        data: { type: result.type, status: result.status, message: result.message, requestId: rid },
       });
       return json(
         {
