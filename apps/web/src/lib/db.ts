@@ -186,6 +186,7 @@ export interface StaffSession {
   role: string;
   displayName: string;
   storeName: string;
+  peyMock: boolean;
 }
 
 function kiosk() {
@@ -209,19 +210,22 @@ export async function getStaffSession(): Promise<StaffSession | null> {
 
   const { data: staff, error } = await vendor
     .from('staff')
-    .select('store_id, role, display_name, stores(name)')
+    .select('store_id, role, display_name, stores(name, pey_mock)')
     .maybeSingle();
   if (error) throw error;
   if (!staff) return null;
 
-  const store = Array.isArray(staff.stores) ? staff.stores[0] : staff.stores;
+  const store = (Array.isArray(staff.stores) ? staff.stores[0] : staff.stores) as
+    | { name?: string; pey_mock?: boolean }
+    | null;
 
   return {
     userId: data.session.user.id,
     storeId: staff.store_id,
     role: staff.role,
     displayName: staff.display_name,
-    storeName: (store as { name?: string } | null)?.name ?? 'Tienda',
+    storeName: store?.name ?? 'Tienda',
+    peyMock: store?.pey_mock ?? false,
   };
 }
 

@@ -46,6 +46,7 @@ export default function KioskLayout({ children }: { children: React.ReactNode })
       <KioskHeader
         storeName={staff?.storeName ?? 'FacePay MX'}
         deviceLabel={staff?.displayName ?? 'Nueva caja'}
+        sandbox={staff?.peyMock ?? false}
       />
       <main className="flex flex-1 flex-col">{children}</main>
       <footer className="border-t border-border px-6 py-3 text-center text-xs text-muted-foreground md:px-12">

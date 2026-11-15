@@ -91,6 +91,12 @@ export default function ReceiptPage() {
         </CardContent>
       </Card>
 
+      {tx.peyTransactionId?.startsWith('mock-') && (
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-700 dark:text-amber-400">
+          Pago simulado (sandbox): no se movió dinero.
+        </p>
+      )}
+
       {tx.latePayment && (
         <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-700 dark:text-amber-400">
           {t('kiosk.receipt.late')}

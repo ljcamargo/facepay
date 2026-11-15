@@ -131,6 +131,11 @@ export default function PayPage() {
         {t('common.cancel')}
       </Button>
 
+      {tx.peyTransactionId?.startsWith('mock-') && (
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-700 dark:text-amber-400">
+          Modo sandbox: el cobro se simula, no llega a tu banco.
+        </p>
+      )}
       <p className="max-w-md text-center text-sm text-muted-foreground">{t('kiosk.wait.slow')}</p>
       <p className="text-xs text-muted-foreground">{t('kiosk.confirm.disclosure')}</p>
     </div>

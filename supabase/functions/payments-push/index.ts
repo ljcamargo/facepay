@@ -90,8 +90,16 @@ Deno.serve(async (req) => {
       log('payment.pey_error', { requestId: rid, tx: tx.id, type: result.type, status: result.status });
       await admin
         .from('transactions')
-        .update({ status: 'failed', metadata: { peyError: result.type } })
+        .update({ status: 'failed', metadata: { peyError: { type: result.type, status: result.status, requestId: rid } } })
         .eq('id', tx.id);
+      await admin.from('audit_log').insert({
+        actor_type: 'system',
+        store_id: tx.store_id,
+        action: 'payment.push_pey_error',
+        entity: 'transactions',
+        entity_id: tx.id,
+        data: { type: result.type, status: result.status, requestId: rid },
+      });
       return json(
         {
           error: {

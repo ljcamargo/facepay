@@ -113,8 +113,27 @@ Deno.serve(async (req) => {
 
     if (!result.ok) {
       log('payment.phone_error', { requestId: rid, tx: tx.id, type: result.type, status: result.status });
+      // Durable evidence: the dashboard log expires, this does not.
+      await admin
+        .from('transactions')
+        .update({ metadata: { peyError: { type: result.type, status: result.status, requestId: rid } } })
+        .eq('id', tx.id);
+      await admin.from('audit_log').insert({
+        actor_type: 'system',
+        store_id: tx.store_id,
+        action: 'payment.phone_pey_error',
+        entity: 'transactions',
+        entity_id: tx.id,
+        data: { type: result.type, status: result.status, requestId: rid },
+      });
       return json(
-        { error: { code: 'PEY_REJECTED', message: 'No pudimos enviar la solicitud al banco.', requestId: rid } },
+        {
+          error: {
+            code: result.type === 'INVALID_PARAMETER' ? 'PEY_PHONE_NOT_ENROLLED' : 'PEY_REJECTED',
+            message: 'No pudimos enviar la solicitud al banco.',
+            requestId: rid,
+          },
+        },
         502,
       );
     }

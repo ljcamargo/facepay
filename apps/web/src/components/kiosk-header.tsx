@@ -3,16 +3,18 @@
 import Link from 'next/link';
 import { History, Settings, Wifi } from 'lucide-react';
 import { t } from '@facepay/shared';
+import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
 
 interface Props {
   storeName: string;
   deviceLabel: string;
+  sandbox?: boolean;
   className?: string;
 }
 
-export function KioskHeader({ storeName, deviceLabel, className }: Props) {
+export function KioskHeader({ storeName, deviceLabel, sandbox = false, className }: Props) {
   return (
     <header
       className={cn(
@@ -29,6 +31,11 @@ export function KioskHeader({ storeName, deviceLabel, className }: Props) {
       </div>
 
       <div className="flex items-center gap-2">
+        {sandbox && (
+          <Badge tone="warning" className="font-mono tracking-wide">
+            SANDBOX
+          </Badge>
+        )}
         <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex">
           <Wifi className="size-3.5 text-success" aria-hidden />
           {t('common.online')}

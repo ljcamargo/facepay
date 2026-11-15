@@ -60,7 +60,13 @@ export default function PhonePayPage() {
           : typeof err === 'object' && err !== null && 'message' in err
             ? String((err as { message: unknown }).message)
             : String(err);
-      setError(`No pudimos enviar la solicitud (${code}). Pide al cajero que la genere de nuevo.`);
+      setError(
+        code === 'PEY_PHONE_NOT_ENROLLED'
+          ? 'Ese número no tiene CoDi activo en su banco. Regístralo en la app de tu banco o elige otro método.'
+          : code === 'PEY_REJECTED'
+            ? 'El banco no aceptó la solicitud. Revisa que tu CoDi esté activo.'
+            : `No pudimos enviar la solicitud (${code}). Pide al cajero que la genere de nuevo.`,
+      );
     } finally {
       setBusy(false);
     }
@@ -104,6 +110,9 @@ export default function PhonePayPage() {
         <label htmlFor="phone" className="text-sm font-medium">
           {t('onboarding.phone.label')}
         </label>
+        <p className="-mt-1 text-xs text-muted-foreground">
+          Este número debe tener <strong>CoDi activo</strong> en tu banco. Si no, el cobro no llega.
+        </p>
         <Input
           id="phone"
           value={phone}
