@@ -42,12 +42,14 @@ camera can still be tested without burning requests.
 **Verified:** mock push end-to-end (tx → awaiting_payment, `mock-…`, numRef 2877533); typecheck/build
 green; functions deployed.
 
-**Blocked:** the webhook **URL must be created in the pey portal** — there is no public API to manage
-webhooks, so the CLI cannot do it. `PEY_WEBHOOK_SECRET` is still missing; until it exists,
-`webhooks-pey` answers 503 and a real payment would never be marked paid.
+**Webhook:** created in the pey portal (there is no public API for it) and `PEY_WEBHOOK_SECRET` set as a
+Supabase secret. Verified locally by signing payloads with that secret:
+valid → `200 {ok:true}` and the row flips to `paid` with `payer_bank_code` + CLABE last4;
+same `webhook-id` again → `200 {duplicate:true}`; bad signature → `401`.
 
 **Known issues / traps:**
-- With simulation off and no webhook secret, the kiosk waits until the 10-minute expiry.
+- With simulation off, a payment that pey never notifies (or a wrong webhook secret) leaves the kiosk
+  waiting until the 10-minute expiry; reconciliation is still Phase 11.
 - One API key per platform today. Per-store keys are a schema change (`stores.pey_secret_ref` +
   Supabase Vault) and an onboarding flow; do it before the second merchant, not before the demo.
 
