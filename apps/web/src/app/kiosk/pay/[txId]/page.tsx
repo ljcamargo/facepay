@@ -38,7 +38,13 @@ export default function PayPage() {
     const simulate = setTimeout(() => {
       if (simulated.current) return;
       simulated.current = true;
-      void demoMarkPaid(id).catch(() => undefined);
+      void getTx(id)
+        .then((row) => {
+          // Only while the store runs in simulation; a real pey id waits for the webhook.
+          if (row?.peyTransactionId?.startsWith('mock-')) return demoMarkPaid(id);
+          return undefined;
+        })
+        .catch(() => undefined);
     }, SIMULATED_APPROVAL_MS);
 
     return () => {

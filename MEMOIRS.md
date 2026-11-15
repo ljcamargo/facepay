@@ -19,6 +19,38 @@ Entry template:
 
 ---
 
+## 2026-11-15 — Phase B: pey push + webhook (key installed) — agent
+**Intent:** replace the simulated intent with the real CoDi push, leaving a per-store switch so the
+camera can still be tested without burning requests.
+
+**Changed:**
+- Supabase secrets set: `PEY_API_KEY` (live), `PEY_API_BASE`. Key verified with an authenticated read
+  (`GET /transaction/api-key` → 200 with a key, 401 without). **No real push was sent.**
+- Edge Functions deployed with `--use-api` (no Docker):
+  - `payments-push` (staff JWT): validates the checkout, resolves the customer phone, calls
+    `POST /codi/pn`, stores `pey_transaction_id`, `codi_id`, `num_ref`, `expires_at`.
+  - `payments-phone` (customer JWT): same call for the "solo pagar" path.
+  - `webhooks-pey` (`verify_jwt = false`): Standard Webhooks HMAC + 300 s freshness + `webhook-id`
+    idempotency, marks `paid`, records payer bank/CLABE last4, flags late payments, parks orphans.
+- `stores.pey_mock` (default true) + `set_pey_mock()`; Ajustes shows a **Modo simulación** switch.
+  With it on, the functions write `mock-<tx>` and the kiosk simulates the bank as before.
+- `confirm_face_payment` now only *attaches* the customer, leaving status `created`: the push needs a
+  customer but the provider decides the status.
+- Client: `sendPush` and `startPhonePayment` call the functions; the pay screen only auto-marks paid
+  when the provider id starts with `mock-`.
+
+**Verified:** mock push end-to-end (tx → awaiting_payment, `mock-…`, numRef 2877533); typecheck/build
+green; functions deployed.
+
+**Blocked:** the webhook **URL must be created in the pey portal** — there is no public API to manage
+webhooks, so the CLI cannot do it. `PEY_WEBHOOK_SECRET` is still missing; until it exists,
+`webhooks-pey` answers 503 and a real payment would never be marked paid.
+
+**Known issues / traps:**
+- With simulation off and no webhook secret, the kiosk waits until the 10-minute expiry.
+- One API key per platform today. Per-store keys are a schema change (`stores.pey_secret_ref` +
+  Supabase Vault) and an onboarding flow; do it before the second merchant, not before the demo.
+
 ## 2026-11-14 — Phase A: kiosk on real Postgres, vendor login, 5 s auto-send — agent
 **Intent:** stop simulating storage. The kiosk now reads and writes real rows; only the payment call is
 simulated.

@@ -128,10 +128,21 @@ export async function cancelMyCheckout(txId: string): Promise<void> {
 
 /** Customer starts the payment from their own phone (no face). */
 export async function startPhonePayment(txId: string, phoneE164: string): Promise<void> {
-  const { error } = await client().rpc('start_phone_payment', {
-    p_tx: txId,
-    p_phone: phoneE164,
+  const { data, error } = await client().functions.invoke('payments-phone', {
+    body: { transactionId: txId, phone: phoneE164 },
   });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error.message ?? 'push failed');
+}
+
+export async function getPeyMock(): Promise<boolean> {
+  const { data, error } = await kiosk().from('stores').select('pey_mock').maybeSingle();
+  if (error) throw error;
+  return data?.pey_mock ?? true;
+}
+
+export async function setPeyMock(mock: boolean): Promise<void> {
+  const { error } = await kiosk().rpc('set_pey_mock', { p_mock: mock });
   if (error) throw error;
 }
 
@@ -249,7 +260,16 @@ export async function confirmFacePayment(input: {
   return mapTx(data);
 }
 
-/** Phase A stand-in for the CoDi webhook. Gone in Phase B. */
+/** Asks the Edge Function to send the real CoDi push (or mock it per store). */
+export async function sendPush(txId: string): Promise<void> {
+  const { data, error } = await kiosk().functions.invoke('payments-push', {
+    body: { transactionId: txId },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error.message ?? 'push failed');
+}
+
+/** Simulation only: called by the kiosk while the provider id is `mock-…`. */
 export async function demoMarkPaid(txId: string): Promise<Transaction> {
   const { data, error } = await kiosk().rpc('demo_mark_paid', { p_tx: txId });
   if (error) throw error;
@@ -344,6 +364,7 @@ function mapTx(row: TxRow): Transaction {
     payerBankCode: row.payer_bank_code,
     payerClabeLast4: row.payer_clabe_last4,
     latePayment: row.late_payment,
+    peyTransactionId: row.pey_transaction_id ?? null,
   };
 }
 

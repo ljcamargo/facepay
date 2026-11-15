@@ -6,7 +6,7 @@ import { ShieldCheck } from 'lucide-react';
 import { formatMxn, t } from '@facepay/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { cancelTransaction, confirmFacePayment, getTx } from '@/lib/db';
+import { cancelTransaction, confirmFacePayment, getTx, sendPush } from '@/lib/db';
 import { getTxContext } from '@/lib/tx-context';
 
 const AUTO_SEND_MS = 5000;
@@ -52,10 +52,11 @@ export default function ConfirmPage() {
         similarity: context.similarity,
         liveness: context.liveness,
       });
+      await sendPush(txId);
       router.replace(`/kiosk/pay/${txId}`);
     } catch {
       sent.current = false;
-      setError('No pudimos enviar la solicitud. Intenta de nuevo.');
+      setError('No pudimos enviar la solicitud a tu banco. Intenta de nuevo.');
     }
   }, [txId, router]);
 

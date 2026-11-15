@@ -8,17 +8,31 @@ import { FACE, formatMxn, t } from '@facepay/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { getStaffSession, signOutVendor, type StaffSession } from '@/lib/db';
+import { getPeyMock, getStaffSession, setPeyMock, signOutVendor, type StaffSession } from '@/lib/db';
 
 const PILOT_LIMIT = 30_000;
 
 export default function SettingsPage() {
   const router = useRouter();
   const [staff, setStaff] = React.useState<StaffSession | null>(null);
+  const [mock, setMock] = React.useState(true);
+  const [saved, setSaved] = React.useState(false);
 
   React.useEffect(() => {
     void getStaffSession().then(setStaff).catch(() => undefined);
+    void getPeyMock().then(setMock).catch(() => undefined);
   }, []);
+
+  async function toggleMock(next: boolean) {
+    setSaved(false);
+    setMock(next);
+    try {
+      await setPeyMock(next);
+      setSaved(true);
+    } catch {
+      setMock(!next);
+    }
+  }
 
   async function signOut() {
     await signOutVendor().catch(() => undefined);
@@ -72,6 +86,28 @@ export default function SettingsPage() {
             <Button variant="outline" size="sm" className="mt-2 self-start" onClick={() => void signOut()}>
               <LogOut className="size-4" aria-hidden /> Desconectar
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Modo simulación</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2 text-sm">
+            <p className="text-muted-foreground">
+              Activado, los cobros no se envían a pey: el banco se simula y la tablet marca el pago
+              sola. Desactívalo para usar la API real.
+            </p>
+            <label className="mt-1 flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={mock}
+                onChange={(e) => void toggleMock(e.target.checked)}
+                className="size-5 accent-[var(--primary)]"
+              />
+              <span>{mock ? 'Simulado' : 'API real (pey.mx)'}</span>
+            </label>
+            {saved && <p className="text-xs text-success">Guardado</p>}
           </CardContent>
         </Card>
 

@@ -155,6 +155,7 @@ export function createCheckout(input: { amountCents: number; concept?: string })
     payerBankCode: null,
     payerClabeLast4: null,
     latePayment: false,
+    peyTransactionId: null,
   };
   saveTx(tx);
   return tx;
@@ -264,6 +265,7 @@ export function payTx(txId: string): Transaction | null {
     paidAt: now(),
     receiptNo: receipt,
     latePayment: late,
+    peyTransactionId: tx.peyTransactionId ?? null,
     payerBankCode: 40012,
     payerClabeLast4: '8842',
     customer: tx.customer ?? {

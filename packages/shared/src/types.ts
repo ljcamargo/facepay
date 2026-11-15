@@ -47,6 +47,8 @@ export interface Transaction {
   payerBankCode: number | null;
   payerClabeLast4: string | null;
   latePayment: boolean;
+  /** pey ULID, or `mock-…` while the store runs in simulation. */
+  peyTransactionId: string | null;
 }
 
 export interface OnboardingSession {
