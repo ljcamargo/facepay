@@ -41,6 +41,9 @@ interface Capture {
   quality: number;
   liveness: number;
   bars: number[];
+  /** First eight components, so it is obvious the vector really arrived. */
+  head: string[];
+  norm: number;
 }
 
 export default function FaceHarnessPage() {
@@ -179,17 +182,22 @@ export default function FaceHarnessPage() {
       const started = performance.now();
       const result = await engine.embed(video);
       const ms = Math.round(performance.now() - started);
+      const vector = result.embedding.vector;
       const bars = Array.from({ length: 32 }, (_, i) => {
-        const v = result.embedding.vector[i * 8] ?? 0;
+        const v = vector[i * 8] ?? 0;
         return Math.min(1, Math.abs(v) * 6);
       });
+      let squares = 0;
+      for (let i = 0; i < vector.length; i += 1) squares += (vector[i] ?? 0) ** 2;
       setCapture({
-        hash: shortHash(result.embedding.vector),
+        hash: shortHash(vector),
         dims: result.embedding.dim,
         ms,
         quality: result.quality,
         liveness: result.liveness,
         bars,
+        head: Array.from({ length: 8 }, (_, i) => (vector[i] ?? 0).toFixed(4)),
+        norm: Math.sqrt(squares),
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -315,6 +323,20 @@ export default function FaceHarnessPage() {
         </Card>
       </div>
 
+      {!capture && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Plantilla en memoria</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Pulsa <strong>Capturar plantilla</strong> para ver los 1024 valores que devuelve el
+              modelo (solo se muestran los primeros ocho y un hash).
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {capture && (
         <Card>
           <CardHeader>
@@ -332,7 +354,11 @@ export default function FaceHarnessPage() {
             </div>
             <p className="text-xs text-muted-foreground tabular">
               {capture.dims} dims · hash {capture.hash} · {capture.ms} ms · calidad{' '}
-              {capture.quality.toFixed(2)} · vivacidad {capture.liveness.toFixed(2)}
+              {capture.quality.toFixed(2)} · vivacidad {capture.liveness.toFixed(2)} · norma{' '}
+              {capture.norm.toFixed(3)}
+            </p>
+            <p className="break-all font-mono text-[10px] text-muted-foreground">
+              primeros 8 valores: [{capture.head.join(', ')}, …]
             </p>
             <p className="text-xs text-muted-foreground">
               Esto es una representación de los primeros valores. El vector completo no se muestra ni

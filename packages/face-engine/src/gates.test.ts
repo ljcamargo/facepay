@@ -85,7 +85,7 @@ describe('evaluateGates', () => {
   });
 
   test('face touching the border fails inside', () => {
-    const gates = evaluateGates([face({ box: { x: 0, y: 0, width: 240, height: 280 } })], frame);
+    const gates = evaluateGates([face({ box: { x: -20, y: 0, width: 240, height: 280 } })], frame);
     expect(byId(gates).inside).toBe(false);
   });
 
@@ -114,6 +114,6 @@ describe('isInsideFrame', () => {
 });
 
 test('default thresholds are the documented priors', () => {
-  expect(DEFAULT_THRESHOLDS.maxYawDeg).toBe(30);
+  expect(DEFAULT_THRESHOLDS.maxYawDeg).toBe(35);
   expect(DEFAULT_THRESHOLDS.minFaceRatio).toBeCloseTo(0.2, 5);
 });

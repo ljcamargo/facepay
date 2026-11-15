@@ -64,12 +64,20 @@ function hasAnnotations(face: HumanFace, keys: string[]): boolean {
   });
 }
 
-function mapFace(face: HumanFace): FaceGeometry {
+function scaleBox(
+  box: { x: number; y: number; width: number; height: number },
+  sx: number,
+  sy: number,
+) {
+  return { x: box.x * sx, y: box.y * sy, width: box.width * sx, height: box.height * sy };
+}
+
+function mapFace(face: HumanFace, box: FaceGeometry['box']): FaceGeometry {
   const angle = face.rotation?.angle;
   const meshVisible = Array.isArray(face.mesh) && face.mesh.length > 0;
 
   return {
-    box: toBox(face.box),
+    box,
     // Human reports radians in `rotation.angle`.
     yaw: safeNumber(angle?.yaw) * DEG,
     pitch: safeNumber(angle?.pitch) * DEG,
@@ -115,7 +123,12 @@ function countFingers(hand: HumanHand): number {
   return count;
 }
 
-function signalsFrom(face: HumanFace | undefined, hands: HumanHand[], frame: FrameStats): FrameSignals {
+function signalsFrom(
+  face: HumanFace | undefined,
+  faceBox: FaceGeometry['box'] | undefined,
+  hands: HumanHand[],
+  frame: FrameStats,
+): FrameSignals {
   const gestures = face?.gestures ?? [];
   const blinked = gestures.some((g) => g.includes('blink'));
   const fingers = hands.reduce((sum, hand) => sum + countFingers(hand), 0);
@@ -126,7 +139,7 @@ function signalsFrom(face: HumanFace | undefined, hands: HumanHand[], frame: Fra
     smile: face ? smileFromMesh(face) : 0,
     hands: hands.length,
     fingers,
-    faceScale: face ? toBox(face.box).width / frame.width : 0,
+    faceScale: faceBox ? faceBox.width / frame.width : 0,
   };
 }
 
@@ -195,7 +208,23 @@ export class HumanFaceEngine implements FaceEngine {
 
     const result = await human.detect(video);
     const rawFaces = result.face ?? [];
-    const faces = rawFaces.map(mapFace);
+
+    // Human reports boxes in the *input* resolution (e.g. 1280x720), while the
+    // frame stats are measured on the downscaled canvas. Map one into the other
+    // or every `inside` check fails and the face is never captured.
+    const sourceW =
+      typeof HTMLCanvasElement !== 'undefined' && video instanceof HTMLCanvasElement
+        ? video.width
+        : (video as HTMLVideoElement).videoWidth || frame.width;
+    const sourceH =
+      typeof HTMLCanvasElement !== 'undefined' && video instanceof HTMLCanvasElement
+        ? video.height
+        : (video as HTMLVideoElement).videoHeight || frame.height;
+    const sx = sourceW > 0 ? frame.width / sourceW : 1;
+    const sy = sourceH > 0 ? frame.height / sourceH : 1;
+
+    const boxes = rawFaces.map((f) => scaleBox(toBox(f.box), sx, sy));
+    const faces = rawFaces.map((f, i) => mapFace(f, boxes[i] ?? toBox(undefined)));
     const face = rawFaces[0];
 
     const real = safeNumber(face?.real, 0);
@@ -205,7 +234,7 @@ export class HumanFaceEngine implements FaceEngine {
       rawFaces,
       faces,
       frame,
-      signals: signalsFrom(face, result.hand ?? [], frame),
+      signals: signalsFrom(face, boxes[0], result.hand ?? [], frame),
       liveness: Math.min(real, live),
     };
   }
