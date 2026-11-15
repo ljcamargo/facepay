@@ -6,17 +6,62 @@ import { Loader2 } from 'lucide-react';
 import { formatMxn, t } from '@facepay/shared';
 import { Button } from '@/components/ui/button';
 import { Countdown } from '@/components/countdown';
-import { cancelTx, payTx, startQr } from '@/lib/mock';
-import { useTx } from '@/lib/hooks';
+import { cancelTransaction, demoMarkPaid, getTx } from '@/lib/db';
+import { getTxContext } from '@/lib/tx-context';
+
+/** How long the fake bank takes to "approve". Removed in Phase B. */
+const SIMULATED_APPROVAL_MS = 6000;
 
 export default function PayPage() {
   const params = useParams<{ txId: string }>();
   const router = useRouter();
-  const tx = useTx(params?.txId);
+  const [tx, setTx] = React.useState<Awaited<ReturnType<typeof getTx>>>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const simulated = React.useRef(false);
+
+  React.useEffect(() => {
+    const id = params?.txId;
+    if (!id) return;
+    let active = true;
+
+    const load = async () => {
+      try {
+        const row = await getTx(id);
+        if (active) setTx(row);
+      } catch {
+        if (active) setError('No pudimos consultar el cobro.');
+      }
+    };
+
+    void load();
+    const poll = setInterval(load, 900);
+    const simulate = setTimeout(() => {
+      if (simulated.current) return;
+      simulated.current = true;
+      void demoMarkPaid(id).catch(() => undefined);
+    }, SIMULATED_APPROVAL_MS);
+
+    return () => {
+      active = false;
+      clearInterval(poll);
+      clearTimeout(simulate);
+    };
+  }, [params?.txId]);
 
   React.useEffect(() => {
     if (tx?.status === 'paid') router.replace(`/kiosk/receipt/${tx.id}`);
   }, [tx?.status, tx?.id, router]);
+
+  if (error) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
+        <p className="text-lg font-medium">{error}</p>
+        <Button variant="outline" onClick={() => router.push('/kiosk')}>
+          {t('common.close')}
+        </Button>
+      </div>
+    );
+  }
 
   if (!tx) {
     return (
@@ -26,30 +71,18 @@ export default function PayPage() {
     );
   }
 
-  if (tx.status === 'cancelled' || tx.status === 'expired') {
+  if (tx.status === 'cancelled' || tx.status === 'expired' || tx.status === 'failed') {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
         <p className="text-lg font-medium">{t('kiosk.error.timeout')}</p>
-        <div className="flex gap-2">
-          <Button onClick={() => router.push(`/kiosk/fallback?tx=${tx.id}`)}>
-            {t('kiosk.wait.useQr')}
-          </Button>
-          <Button variant="outline" onClick={() => router.push('/kiosk')}>
-            {t('common.close')}
-          </Button>
-        </div>
+        <Button variant="outline" onClick={() => router.push('/kiosk')}>
+          {t('common.close')}
+        </Button>
       </div>
     );
   }
 
-  if (tx.status === 'created') {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
-        <p className="text-lg">{formatMxn(tx.amountCents)}</p>
-        <Button onClick={() => payTx(tx.id)}>{t('kiosk.wait.check')}</Button>
-      </div>
-    );
-  }
+  const ctx = getTxContext(tx.id);
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-8">
@@ -63,7 +96,7 @@ export default function PayPage() {
         <p className="mt-3 text-lg text-muted-foreground">
           {t('kiosk.wait.sent', {
             amount: formatMxn(tx.amountCents),
-            phone: tx.customer?.phoneMasked ?? '•••• ••••',
+            phone: ctx?.phoneMasked ?? '•••• ••••',
           })}
         </p>
         <p className="mt-1 text-muted-foreground">{t('kiosk.wait.instruction')}</p>
@@ -72,31 +105,20 @@ export default function PayPage() {
 
       <Countdown expiresAt={tx.expiresAt} label={t('kiosk.wait.expires')} className="text-base" />
 
-      <div className="flex flex-wrap justify-center gap-3">
-        <Button size="lg" onClick={() => payTx(tx.id)}>
-          {t('kiosk.wait.check')}
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          onClick={() => {
-            cancelTx(tx.id);
-            router.push('/kiosk');
-          }}
-        >
-          {t('common.cancel')}
-        </Button>
-        <Button
-          size="lg"
-          variant="ghost"
-          onClick={() => {
-            startQr(tx.id);
-            router.push(`/kiosk/fallback?tx=${tx.id}`);
-          }}
-        >
-          {t('kiosk.wait.useQr')}
-        </Button>
-      </div>
+      <Button
+        size="lg"
+        variant="outline"
+        onClick={async () => {
+          try {
+            await cancelTransaction(tx.id);
+          } catch {
+            /* ignore */
+          }
+          router.push('/kiosk');
+        }}
+      >
+        {t('common.cancel')}
+      </Button>
 
       <p className="max-w-md text-center text-sm text-muted-foreground">{t('kiosk.wait.slow')}</p>
       <p className="text-xs text-muted-foreground">{t('kiosk.confirm.disclosure')}</p>

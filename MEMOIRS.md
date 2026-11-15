@@ -19,6 +19,41 @@ Entry template:
 
 ---
 
+## 2026-11-14 — Phase A: kiosk on real Postgres, vendor login, 5 s auto-send — agent
+**Intent:** stop simulating storage. The kiosk now reads and writes real rows; only the payment call is
+simulated.
+
+**Changed:**
+- Migration `…121000_phase_a`: `current_staff_store_id`, `create_checkout`, `confirm_face_payment`,
+  `demo_mark_paid`, `cancel_transaction`, `enroll_my_face` (all SECURITY DEFINER, store/ownership
+  checked). Migration `…121100_public_checkout_info` lets the phone show amount/store from the QR token
+  without an account.
+- **Vendor login replaces pairing** (ADR-018): email + password, session pinned to `facepay.vendor`;
+  the customer client lives on `facepay.auth`. Staff user `caja@facepay.mx` created and linked to the
+  seeded store.
+- Kiosk flow is real: checkout inserts a transaction, identify runs the actual engine
+  (camera → gates → embed → `identify_customer`), confirm auto-sends after **5 s** with a reverse bar and
+  a cancel button (no confirmation tap), pay polls the row and simulates the bank after 6 s, receipt and
+  history read from Postgres.
+- Onboarding is real enrollment: QR = `/onboarding/<txId>`, phone → consent → camera → `enroll_my_face`.
+  The "pay after signup" step is gone: the customer goes back to the kiosk camera, which now matches.
+- Home shows only `+ Nueva Venta`; sales totals and last sale moved to History (the tablet faces the
+  customer).
+- Challenges removed from the customer path (ADR-017).
+- Settings: Desconectar (sign out) instead of unpair.
+
+**Verified:** `db push` clean, typecheck and `next build` green, staff row present.
+
+**Known issues / traps:**
+- `demo_mark_paid` is a stand-in for the webhook and is **staff-only**; delete it in Phase B.
+- The matched candidate (name/phone) is carried in `sessionStorage` because staff cannot read
+  `customers` under RLS. That is deliberate, not an oversight.
+- `identify_customer` receives the vector as text (`'[0.1,…]'`) since PostgREST has no vector type.
+- Thresholds remain 0.60 / 0.08; they are constants, not measured.
+
+**Next:** Phase B — Edge Function for `POST /codi/pn`, webhook with signature + idempotency,
+`transactions.pey_transaction_id`, real receipt data, and the legal placeholders.
+
 ## 2026-11-14 — Phase 4b: models fixed, challenges removed from the customer path — human + agent
 **Intent:** the first deploy showed `404 /models/human/blazeface.json`, and the owner rightly rejected
 head-turning challenges in a retail queue.

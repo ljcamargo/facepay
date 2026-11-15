@@ -218,10 +218,8 @@ on request); `phone_e164` is unverified; `payment_events.webhook_id` unique; RLS
 
 ## 7. Phases
 
-Status: Phase 0–1 done (mock UI), **Phase 2 done** (schema + 19/19 DB assertions green),
-**Phase 3 done** (real anonymous identity, consent with hash, `/mi-cuenta` on real rows),
-**Phase 4 done** (face engine + gates + liveness + calibration harness; camera path pending on-device
-verification). Check `MEMOIRS.md` for the current state.
+Status: **Phase A in progress** (everything real except the payment call). Earlier phases 0–4 are done
+and absorbed into it. Check `MEMOIRS.md` for the current state.
 
 | Phase | Deliverable | Acceptance |
 | --- | --- | --- |

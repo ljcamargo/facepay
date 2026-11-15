@@ -2,222 +2,109 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ExternalLink, Smartphone, UserPlus } from 'lucide-react';
-import { formatMxn, t, type OnboardingSession } from '@facepay/shared';
+import { ArrowLeft, RotateCcw, ScanFace } from 'lucide-react';
+import { formatMxn, t } from '@facepay/shared';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { cancelTransaction, getTx } from '@/lib/db';
 import { QrPanel } from '@/components/qr-panel';
-import { Countdown } from '@/components/countdown';
-import {
-  cancelTx,
-  createSession,
-  getTx,
-  payTx,
-  sessionTxId,
-  startQr,
-} from '@/lib/mock';
-import { useTx } from '@/lib/hooks';
 
-type Mode = 'menu' | 'register' | 'phone' | 'qr';
-
+/** Reached when the face is unknown, ambiguous or the customer cancels. */
 export default function FallbackPage() {
   const router = useRouter();
   const [txId, setTxId] = React.useState<string | null>(null);
-  const [mode, setMode] = React.useState<Mode>('menu');
-  const [session, setSession] = React.useState<OnboardingSession | null>(null);
-  const qrStarted = React.useRef(false);
-  const tx = useTx(txId ?? undefined);
+  const [amount, setAmount] = React.useState(0);
+  const [origin, setOrigin] = React.useState('');
 
   React.useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('tx');
-    if (!id || !getTx(id)) {
+    if (!id) {
       router.replace('/kiosk');
       return;
     }
     setTxId(id);
+    setOrigin(window.location.origin);
+    void getTx(id)
+      .then((tx) => tx && setAmount(tx.amountCents))
+      .catch(() => undefined);
   }, [router]);
 
-  // Registration / pay-by-phone: create the session once and wait for the phone tab.
-  React.useEffect(() => {
-    if (!txId || (mode !== 'register' && mode !== 'phone') || session) return;
-    const current = getTx(txId);
-    if (!current) return;
-    setSession(createSession({ amountCents: current.amountCents, concept: current.concept }));
-  }, [txId, mode, session]);
-
-  React.useEffect(() => {
-    if (!session) return;
-    const timer = setInterval(() => {
-      const linked = sessionTxId(session.token);
-      if (linked) {
-        clearInterval(timer);
-        router.replace(`/kiosk/pay/${linked}`);
-      }
-    }, 700);
-    return () => clearInterval(timer);
-  }, [session, router]);
-
-  // CoDi QR on the tablet: the mock pays itself after a few seconds.
-  React.useEffect(() => {
-    if (!txId || mode !== 'qr' || qrStarted.current) return;
-    qrStarted.current = true;
-    startQr(txId);
-  }, [txId, mode]);
-
-  React.useEffect(() => {
-    if (tx?.status === 'paid') router.replace(`/kiosk/receipt/${tx.id}`);
-  }, [tx?.status, tx?.id, router]);
-
-  if (!tx) {
-    return <div className="flex flex-1 items-center justify-center text-muted-foreground">…</div>;
+  async function cancel() {
+    if (txId) await cancelTransaction(txId).catch(() => undefined);
+    router.replace('/kiosk');
   }
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const onboardingUrl = session ? `${origin}/onboarding/${session.token}` : '';
-  const onboardingUrlPay = session ? `${onboardingUrl}?mode=pay` : '';
+  if (!txId) return <div className="flex flex-1 items-center justify-center">…</div>;
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-12">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => router.push('/kiosk')}>
+        <Button variant="ghost" size="sm" onClick={() => void cancel()}>
           <ArrowLeft className="size-4" aria-hidden /> {t('common.cancel')}
         </Button>
-        <span className="amount text-xl font-semibold">{formatMxn(tx.amountCents)}</span>
+        <span className="amount text-xl font-semibold">{formatMxn(amount)}</span>
       </div>
 
-      {mode === 'menu' && (
-        <>
-          <h1 className="max-w-2xl text-2xl font-semibold tracking-tight">
-            {t('kiosk.fallback.title')}
-          </h1>
+      <h1 className="max-w-2xl text-2xl font-semibold tracking-tight">
+        No pudimos identificarte
+      </h1>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <button
-              type="button"
-              onClick={() => setMode('register')}
-              className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card p-5 text-left transition-colors hover:border-primary/50 hover:bg-muted/40"
-            >
-              <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <UserPlus className="size-6" aria-hidden />
-              </span>
-              <span className="text-base font-medium">{t('kiosk.fallback.register')}</span>
-              <span className="text-xs text-muted-foreground">
-                {t('kiosk.fallback.registerTime')}
-              </span>
-            </button>
+      <div className="grid gap-4 md:grid-cols-3">
+        <button
+          type="button"
+          onClick={() => router.replace(`/kiosk/identify?tx=${txId}`)}
+          className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card p-5 text-left transition-colors hover:border-primary/50 hover:bg-muted/40"
+        >
+          <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <RotateCcw className="size-6" aria-hidden />
+          </span>
+          <span className="text-base font-medium">Volver a mirar la cámara</span>
+          <span className="text-xs text-muted-foreground">
+            Si acabas de registrarte, ya deberíamos reconocerte.
+          </span>
+        </button>
 
-            <button
-              type="button"
-              onClick={() => setMode('qr')}
-              className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card p-5 text-left transition-colors hover:border-primary/50 hover:bg-muted/40"
-            >
-              <span className="flex size-12 items-center justify-center rounded-xl bg-accent/20 text-accent-foreground dark:text-accent">
-                <span className="grid grid-cols-3 gap-0.5" aria-hidden>
-                  {Array.from({ length: 9 }, (_, i) => (
-                    <span key={i} className="size-1.5 rounded-[1px] bg-current" />
-                  ))}
-                </span>
-              </span>
-              <span className="text-base font-medium">{t('kiosk.fallback.codiQr')}</span>
-              <span className="text-xs text-muted-foreground">
-                {t('kiosk.fallback.codiQrTime')}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMode('phone')}
-              className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card p-5 text-left transition-colors hover:border-primary/50 hover:bg-muted/40"
-            >
-              <span className="flex size-12 items-center justify-center rounded-xl bg-muted text-foreground">
-                <Smartphone className="size-6" aria-hidden />
-              </span>
-              <span className="text-base font-medium">{t('kiosk.fallback.phone')}</span>
-              <span className="text-xs text-muted-foreground">
-                {t('kiosk.fallback.phoneTime')}
-              </span>
-            </button>
-          </div>
-
-          <p className="text-sm text-muted-foreground">{t('kiosk.fallback.store')}</p>
-        </>
-      )}
-
-      {(mode === 'register' || mode === 'phone') && (
-        <div className="grid flex-1 items-center gap-8 md:grid-cols-2">
-          <div className="flex flex-col gap-3">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              {mode === 'register' ? t('kiosk.fallback.register') : t('kiosk.fallback.phone')}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Escanea con tu celular. La tablet continúa sola cuando termines.
-            </p>
-            {onboardingUrl && (
-              <a
-                href={mode === 'register' ? onboardingUrl : onboardingUrlPay}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-4 hover:underline"
-              >
-                {t('kiosk.fallback.openHere')}
-                <ExternalLink className="size-3.5" aria-hidden />
-              </a>
-            )}
-            <Button variant="outline" size="sm" className="mt-4 self-start" onClick={() => setMode('menu')}>
-              {t('common.back')}
-            </Button>
-          </div>
-
-          <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6">
-            {onboardingUrl ? (
-              <>
-                <QrPanel value={mode === 'register' ? onboardingUrl : onboardingUrlPay} size={210} />
-                {session && <Countdown expiresAt={session.expiresAt} label={t('kiosk.fallback.remaining')} />}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-            )}
-          </div>
+        <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-border p-5 opacity-60">
+          <span className="flex size-12 items-center justify-center rounded-xl bg-muted text-foreground">
+            <ScanFace className="size-6" aria-hidden />
+          </span>
+          <span className="text-base font-medium">Pagar con QR CoDi</span>
+          <span className="text-xs text-muted-foreground">Disponible en la siguiente fase.</span>
         </div>
-      )}
 
-      {mode === 'qr' && (
-        <div className="grid flex-1 items-center gap-8 md:grid-cols-2">
-          <div className="flex flex-col gap-3">
-            <h2 className="text-2xl font-semibold tracking-tight">{t('kiosk.fallback.codiQr')}</h2>
-            <p className="text-sm text-muted-foreground">
-              Abre tu app bancaria, escanea el código y aprueba el cobro CoDi.
-            </p>
-            {tx.expiresAt && <Countdown expiresAt={tx.expiresAt} label={t('kiosk.wait.expires')} />}
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button size="sm" onClick={() => txId && payTx(txId)}>
-                {t('kiosk.wait.check')}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  if (txId) cancelTx(txId);
-                  router.push('/kiosk');
-                }}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setMode('menu')}>
-                {t('common.back')}
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6">
-            <QrPanel
-              value={JSON.stringify({ TYP: 1, v: '01', ic: 0, IDC: `DEMO${tx.id.slice(-8)}` })}
-              size={210}
-              caption="QR CoDi (demo)"
-            />
-            <p className="text-xs text-muted-foreground">Esperando el pago…</p>
-          </div>
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5">
+          {origin && (
+            <QrPanel value={`${origin}/onboarding/${txId}`} size={150} />
+          )}
+          <span className="text-center text-xs text-muted-foreground">
+            Regístrate con tu celular
+          </span>
+          {origin && (
+            <a
+              href={`${origin}/onboarding/${txId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-primary underline-offset-4 hover:underline"
+            >
+              Abrir en este navegador (demo)
+            </a>
+          )}
         </div>
-      )}
+      </div>
+
+      <Card>
+        <CardContent className="flex flex-col gap-2 p-5 text-sm text-muted-foreground">
+          <p>
+            ¿Aún no tienes tu rostro registrado? Escanea el código de la tablet con tu celular: te
+            toma menos de un minuto.
+          </p>
+          <p className="text-xs">El cajero puede cancelar este cobro y empezar de nuevo.</p>
+        </CardContent>
+      </Card>
+
+      <Button variant="outline" className="self-start" onClick={() => void cancel()}>
+        {t('common.cancel')}
+      </Button>
     </div>
   );
 }

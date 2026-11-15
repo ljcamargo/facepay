@@ -7,7 +7,8 @@ import { Check, Printer } from 'lucide-react';
 import { DEMO_BANKS, formatMxn, t } from '@facepay/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useTx } from '@/lib/hooks';
+import { getTx } from '@/lib/db';
+import { clearTxContext, getTxContext } from '@/lib/tx-context';
 import { timeOfDay } from '@/lib/utils';
 
 const RETURN_SECONDS = 30;
@@ -15,8 +16,14 @@ const RETURN_SECONDS = 30;
 export default function ReceiptPage() {
   const params = useParams<{ txId: string }>();
   const router = useRouter();
-  const tx = useTx(params?.txId);
+  const [tx, setTx] = React.useState<Awaited<ReturnType<typeof getTx>>>(null);
   const [left, setLeft] = React.useState(RETURN_SECONDS);
+
+  React.useEffect(() => {
+    const id = params?.txId;
+    if (!id) return;
+    void getTx(id).then(setTx).catch(() => undefined);
+  }, [params?.txId]);
 
   React.useEffect(() => {
     const timer = setInterval(() => setLeft((s) => Math.max(0, s - 1)), 1000);
@@ -27,7 +34,7 @@ export default function ReceiptPage() {
     if (left === 0) router.replace('/kiosk');
   }, [left, router]);
 
-  if (!tx || tx.status !== 'paid') {
+  if (!tx) {
     return (
       <div className="flex flex-1 items-center justify-center text-muted-foreground">
         {t('common.loading')}
@@ -35,6 +42,18 @@ export default function ReceiptPage() {
     );
   }
 
+  if (tx.status !== 'paid') {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+        <p className="text-lg font-medium">{t('kiosk.wait.title')}</p>
+        <Button variant="outline" onClick={() => router.replace(`/kiosk/pay/${tx.id}`)}>
+          {t('kiosk.wait.check')}
+        </Button>
+      </div>
+    );
+  }
+
+  const ctx = getTxContext(tx.id);
   const bank = tx.payerBankCode ? (DEMO_BANKS[tx.payerBankCode] ?? String(tx.payerBankCode)) : '—';
 
   return (
@@ -53,14 +72,21 @@ export default function ReceiptPage() {
 
       <Card className="w-full max-w-lg">
         <CardContent className="divide-y divide-border p-0 text-sm">
-          <Row label={t('kiosk.receipt.folio')} value={`A-${String(tx.receiptNo).padStart(6, '0')}`} />
+          <Row
+            label={t('kiosk.receipt.folio')}
+            value={`A-${String(tx.receiptNo ?? 0).padStart(6, '0')}`}
+          />
           <Row
             label={t('kiosk.receipt.method')}
             value={
               tx.method === 'codi_qr' ? t('kiosk.receipt.methodQr') : t('kiosk.receipt.methodFace')
             }
           />
-          <Row label={t('kiosk.receipt.bank')} value={`${bank} · CLABE •••• ${tx.payerClabeLast4 ?? '----'}`} />
+          <Row label="Cliente" value={ctx?.displayName ?? '—'} />
+          <Row
+            label={t('kiosk.receipt.bank')}
+            value={`${bank} · CLABE •••• ${tx.payerClabeLast4 ?? '----'}`}
+          />
           <Row label={t('kiosk.receipt.ref')} value={tx.id.slice(-12).toUpperCase()} />
         </CardContent>
       </Card>
@@ -74,6 +100,7 @@ export default function ReceiptPage() {
       <div className="flex flex-wrap justify-center gap-3">
         <Link
           href="/kiosk"
+          onClick={() => clearTxContext(tx.id)}
           className="inline-flex h-14 items-center justify-center rounded-lg bg-primary px-6 text-base font-medium text-primary-foreground transition-[filter] hover:brightness-110"
         >
           {t('kiosk.receipt.newSale')}

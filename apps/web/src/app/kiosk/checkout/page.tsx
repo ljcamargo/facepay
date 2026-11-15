@@ -7,33 +7,36 @@ import { formatMxn, padToCents, t } from '@facepay/shared';
 import { AmountPad } from '@/components/amount-pad';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { createCheckout, PilotLimitError, DEMO_PILOT_LIMIT } from '@/lib/mock';
+import { createCheckout } from '@/lib/db';
 import { cn } from '@/lib/utils';
+
+const PILOT_LIMIT = 30_000; // mirrors stores.pilot_limit_cents
 
 export default function CheckoutPage() {
   const router = useRouter();
   const [buffer, setBuffer] = React.useState('');
   const [concept, setConcept] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
 
   const cents = padToCents(buffer);
-  const overLimit = cents > DEMO_PILOT_LIMIT;
+  const overLimit = cents > PILOT_LIMIT;
 
-  function start(destination: 'identify' | 'fallback') {
+  async function start(destination: 'identify' | 'fallback') {
     setError(null);
-    if (cents <= 0) {
-      setError(t('kiosk.checkout.zero'));
-      return;
-    }
+    if (cents <= 0) return setError(t('kiosk.checkout.zero'));
+    setBusy(true);
     try {
-      const tx = createCheckout({ amountCents: cents, concept });
+      const tx = await createCheckout(cents, concept);
       router.push(`/kiosk/${destination}?tx=${tx.id}`);
     } catch (err) {
-      if (err instanceof PilotLimitError) {
-        setError(`El tope del piloto es ${formatMxn(DEMO_PILOT_LIMIT)} por cobro.`);
-        return;
-      }
-      setError(t('common.error'));
+      const message = err instanceof Error ? err.message : '';
+      setError(
+        message.includes('pilot limit')
+          ? `El tope del piloto es ${formatMxn(PILOT_LIMIT)} por cobro.`
+          : 'No pudimos iniciar el cobro.',
+      );
+      setBusy(false);
     }
   }
 
@@ -60,7 +63,7 @@ export default function CheckoutPage() {
             </p>
             {overLimit && (
               <p className="mt-2 text-sm text-destructive">
-                El tope del piloto es {formatMxn(DEMO_PILOT_LIMIT)}.
+                El tope del piloto es {formatMxn(PILOT_LIMIT)}.
               </p>
             )}
           </div>
@@ -68,9 +71,7 @@ export default function CheckoutPage() {
           <div className="flex flex-col gap-2">
             <label htmlFor="concept" className="text-sm font-medium">
               {t('kiosk.checkout.concept')}{' '}
-              <span className="font-normal text-muted-foreground">
-                ({t('common.optional')})
-              </span>
+              <span className="font-normal text-muted-foreground">({t('common.optional')})</span>
             </label>
             <Input
               id="concept"
@@ -92,8 +93,8 @@ export default function CheckoutPage() {
             <Button
               size="lg"
               className="h-16 text-lg"
-              disabled={cents <= 0 || overLimit}
-              onClick={() => start('identify')}
+              disabled={cents <= 0 || overLimit || busy}
+              onClick={() => void start('identify')}
             >
               <ScanFace className="size-5" aria-hidden />
               {t('kiosk.checkout.face')}
@@ -101,8 +102,8 @@ export default function CheckoutPage() {
             <Button
               variant="outline"
               size="lg"
-              disabled={cents <= 0 || overLimit}
-              onClick={() => start('fallback')}
+              disabled={cents <= 0 || overLimit || busy}
+              onClick={() => void start('fallback')}
             >
               <Wallet className="size-5" aria-hidden />
               {t('kiosk.checkout.other')}

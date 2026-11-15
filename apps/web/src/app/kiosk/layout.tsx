@@ -2,41 +2,60 @@
 
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { DEMO_STORE, t } from '@facepay/shared';
+import { t } from '@facepay/shared';
 import { KioskHeader } from '@/components/kiosk-header';
-import { getDevice } from '@/lib/mock';
+import { getStaffSession, type StaffSession } from '@/lib/db';
 import { useMounted } from '@/lib/hooks';
+import { hasSupabase } from '@/lib/supabase';
 
 export default function KioskLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const mounted = useMounted();
-  const [device, setDevice] = React.useState<ReturnType<typeof getDevice>>(null);
+  const [staff, setStaff] = React.useState<StaffSession | null>(null);
+  const [checked, setChecked] = React.useState(false);
 
   const isSetup = pathname === '/kiosk/setup';
 
   React.useEffect(() => {
     if (!mounted) return;
-    const current = getDevice();
-    setDevice(current);
-    if (!current && !isSetup) router.replace('/kiosk/setup');
+    let active = true;
+    getStaffSession()
+      .then((session) => {
+        if (!active) return;
+        setStaff(session);
+        setChecked(true);
+        if (!session && !isSetup) router.replace('/kiosk/setup');
+      })
+      .catch(() => {
+        if (!active) return;
+        setChecked(true);
+        if (!isSetup) router.replace('/kiosk/setup');
+      });
+    return () => {
+      active = false;
+    };
   }, [mounted, isSetup, router]);
 
-  if (!mounted) {
-    return <div className="min-h-dvh bg-background" aria-busy="true" />;
-  }
-
-  if (!device && !isSetup) {
+  if (!mounted || (!staff && !isSetup) || (!checked && !isSetup)) {
     return <div className="min-h-dvh bg-background" aria-busy="true" />;
   }
 
   return (
     <div className="kiosk flex min-h-dvh flex-col bg-background">
-      <KioskHeader storeName={DEMO_STORE.name} deviceLabel={device?.label ?? 'Nueva tablet'} />
+      <KioskHeader
+        storeName={staff?.storeName ?? 'FacePay MX'}
+        deviceLabel={staff?.displayName ?? 'Nueva caja'}
+      />
       <main className="flex flex-1 flex-col">{children}</main>
       <footer className="border-t border-border px-6 py-3 text-center text-xs text-muted-foreground md:px-12">
         {t('common.disclosure')}
       </footer>
+      {!hasSupabase && (
+        <p className="bg-destructive/10 px-6 py-2 text-center text-xs text-destructive">
+          Supabase no está configurado: esta tablet no puede cobrar.
+        </p>
+      )}
     </div>
   );
 }

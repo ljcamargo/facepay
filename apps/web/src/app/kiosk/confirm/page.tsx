@@ -6,35 +6,86 @@ import { ShieldCheck } from 'lucide-react';
 import { formatMxn, t } from '@facepay/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { getTx, sendPush } from '@/lib/mock';
-import { useTx } from '@/lib/hooks';
+import { cancelTransaction, confirmFacePayment, getTx } from '@/lib/db';
+import { getTxContext } from '@/lib/tx-context';
 
+const AUTO_SEND_MS = 5000;
+
+/**
+ * No confirmation button: a registered customer does not touch the tablet.
+ * A 5 s reverse progress bar sends the request on its own; Cancel aborts.
+ */
 export default function ConfirmPage() {
   const router = useRouter();
   const [txId, setTxId] = React.useState<string | null>(null);
-  const tx = useTx(txId ?? undefined);
+  const [amount, setAmount] = React.useState(0);
+  const [left, setLeft] = React.useState(AUTO_SEND_MS);
+  const [error, setError] = React.useState<string | null>(null);
+  const sent = React.useRef(false);
+  const [ctx, setCtx] = React.useState<ReturnType<typeof getTxContext>>(null);
 
   React.useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('tx');
-    if (!id || !getTx(id)) {
+    if (!id) {
       router.replace('/kiosk');
       return;
     }
     setTxId(id);
+    setCtx(getTxContext(id));
+    void getTx(id)
+      .then((tx) => tx && setAmount(tx.amountCents))
+      .catch(() => undefined);
   }, [router]);
 
-  const customer = tx?.customer;
+  const send = React.useCallback(async () => {
+    if (!txId || sent.current) return;
+    const context = getTxContext(txId);
+    if (!context) {
+      router.replace(`/kiosk/fallback?tx=${txId}`);
+      return;
+    }
+    sent.current = true;
+    try {
+      await confirmFacePayment({
+        txId,
+        customerId: context.customerId,
+        similarity: context.similarity,
+        liveness: context.liveness,
+      });
+      router.replace(`/kiosk/pay/${txId}`);
+    } catch {
+      sent.current = false;
+      setError('No pudimos enviar la solicitud. Intenta de nuevo.');
+    }
+  }, [txId, router]);
 
-  function accept() {
-    if (!tx) return;
-    sendPush(tx.id);
-    router.push(`/kiosk/pay/${tx.id}`);
+  React.useEffect(() => {
+    if (!txId) return;
+    const started = Date.now();
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - started;
+      const remaining = Math.max(0, AUTO_SEND_MS - elapsed);
+      setLeft(remaining);
+      if (remaining === 0) {
+        clearInterval(timer);
+        void send();
+      }
+    }, 60);
+    return () => clearInterval(timer);
+  }, [txId, send]);
+
+  async function abort() {
+    if (!txId) return;
+    sent.current = true;
+    try {
+      await cancelTransaction(txId);
+    } catch {
+      /* the row stays; not worth blocking the cashier */
+    }
+    router.replace('/kiosk');
   }
 
-  function reject() {
-    if (!tx) return;
-    router.push(`/kiosk/fallback?tx=${tx.id}&reason=rejected`);
-  }
+  const progress = Math.max(0, Math.min(1, left / AUTO_SEND_MS));
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-8 md:px-12">
@@ -44,38 +95,40 @@ export default function ConfirmPage() {
 
       <div className="text-center">
         <h1 className="text-4xl font-semibold tracking-tight">
-          {t('kiosk.confirm.title', { name: customer?.displayName ?? '—' })}
+          {ctx?.displayName ? `Hola, ${ctx.displayName}` : t('kiosk.confirm.title', { name: '' })}
         </h1>
         <p className="mt-2 text-lg text-muted-foreground">
-          {t('kiosk.confirm.sendTo', { phone: customer?.phoneMasked ?? '•••• ••••' })}
+          {t('kiosk.confirm.sendTo', { phone: ctx?.phoneMasked ?? '•••• ••••' })}
         </p>
-        <p className="amount mt-4 text-2xl font-semibold">{formatMxn(tx?.amountCents ?? 0)}</p>
+        <p className="amount mt-4 text-2xl font-semibold">{formatMxn(amount)}</p>
       </div>
 
-      <div className="flex w-full max-w-md flex-col gap-3">
-        <Button size="lg" className="h-16 text-lg" onClick={accept}>
-          {t('kiosk.confirm.yes')}
-        </Button>
-        <Button variant="outline" size="lg" className="h-14" onClick={reject}>
-          {t('kiosk.confirm.no')}
-        </Button>
+      <div className="w-full max-w-md">
+        <p className="mb-2 text-center text-sm font-medium">Estamos validando tu rostro…</p>
+        <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
+          <div
+            className="h-full rounded-full bg-primary transition-[width] duration-100 ease-linear"
+            style={{ width: `${progress * 100}%` }}
+          />
+        </div>
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          Enviando en {Math.ceil(left / 1000)} s · toca cancelar si no eres tú
+        </p>
       </div>
+
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+
+      <Button variant="outline" size="lg" className="h-14 px-10" onClick={() => void abort()}>
+        {t('common.cancel')}
+      </Button>
 
       <Card className="w-full max-w-md border-dashed">
         <CardContent className="p-4 text-center text-xs text-muted-foreground">
-          <p>{t('kiosk.confirm.disclosure')}</p>
-          <p className="mt-2">
-            {t('kiosk.confirm.fingerprint', { hash: '7f3a9c…' })}
-            <span className="ml-1 inline-flex gap-0.5 align-middle" aria-hidden>
-              {Array.from({ length: 12 }, (_, i) => (
-                <span
-                  key={i}
-                  className="inline-block size-1.5 rounded-[1px] bg-primary/60"
-                  style={{ opacity: ((i * 37) % 10) / 10 + 0.15 }}
-                />
-              ))}
-            </span>
-          </p>
+          {t('kiosk.confirm.disclosure')}
         </CardContent>
       </Card>
     </div>
