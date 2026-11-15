@@ -8,11 +8,11 @@ import type { FaceGeometry, FrameStats, GateResult, GateThresholds } from './typ
 export const DEFAULT_THRESHOLDS: GateThresholds = {
   // Deliberately forgiving: this is an MVP and a soft webcam is not a portal
   // camera. Values measured on /dev/face; tighten after calibration.
-  maxYawDeg: 30,
-  maxPitchDeg: 25,
-  maxRollDeg: 25,
+  maxYawDeg: 35,
+  maxPitchDeg: 30,
+  maxRollDeg: 30,
   minFaceRatio: 0.2,
-  minSharpness: 18,
+  minSharpness: 12,
   minLuma: 60,
   maxLuma: 205,
   maxClippedRatio: 0.05,
@@ -49,7 +49,12 @@ export function evaluateGates(
   results.push({
     id: 'single_face',
     ok: faces.length === 1,
-    hintKey: faces.length > 1 ? 'kiosk.identify.hint.multiple' : 'kiosk.identify.hint.center',
+    hintKey:
+      faces.length > 1
+        ? 'kiosk.identify.hint.multiple'
+        : faces.length === 0
+          ? 'kiosk.identify.hint.noFace'
+          : 'kiosk.identify.hint.center',
   });
 
   if (!face) {
@@ -103,7 +108,7 @@ export function evaluateGates(
 
   results.push({
     id: 'inside',
-    ok: isInsideFrame(face.box, frame.width, frame.height),
+    ok: isInsideFrame(face.box, frame.width, frame.height, 0),
     hintKey: 'kiosk.identify.hint.center',
   });
 

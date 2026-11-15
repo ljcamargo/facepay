@@ -60,6 +60,7 @@ export const es = {
   'kiosk.identify.hint.dark': 'Hay poca luz',
   'kiosk.identify.hint.still': 'Mantén el rostro quieto',
   'kiosk.identify.hint.center': 'Mira de frente',
+  'kiosk.identify.hint.noFace': 'No veo tu rostro: acércate a la cámara',
   'kiosk.identify.hint.occluded': 'Quítate lentes oscuros o cubrebocas',
   'kiosk.identify.hint.bright': 'Hay demasiada luz de frente',
   'kiosk.identify.noCamera': 'No pudimos abrir la cámara.',

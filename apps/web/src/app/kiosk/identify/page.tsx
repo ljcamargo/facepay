@@ -30,6 +30,7 @@ export default function IdentifyPage() {
   const [stage, setStage] = React.useState<'loading' | 'scanning' | 'error'>('loading');
   const [progress, setProgress] = React.useState(0);
   const [hint, setHint] = React.useState<CopyKey | null>(null);
+  const [debug, setDebug] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   const done = React.useRef(false);
@@ -102,6 +103,9 @@ export default function IdentifyPage() {
             const analysis = await engine.analyze(videoRef.current);
             const gates = evaluateGates(analysis.faces, analysis.frame);
             setHint(worstHint(gates));
+            setDebug(
+              `${analysis.faces.length} rostro(s) · yaw ${Math.round(analysis.signals.yaw)}° · nitidez ${Math.round(analysis.frame.sharpness)} · luz ${Math.round(analysis.frame.meanLuma)}`,
+            );
 
             const ok = gates.every((g) => g.ok);
             streak = ok ? streak + 1 : 0;
@@ -110,7 +114,15 @@ export default function IdentifyPage() {
             if (streak >= GOOD_FRAMES) {
               if (timer) clearInterval(timer);
               timer = null;
-              const capture = await engine.embed(videoRef.current);
+
+              let capture;
+              try {
+                capture = await engine.embed(videoRef.current);
+              } catch {
+                setError('No pudimos tomar tu plantilla. Intenta de nuevo.');
+                return goFallback(id);
+              }
+
               const match = await identifyFace({
                 vector: capture.embedding.vector,
                 model: capture.embedding.model,
@@ -165,29 +177,34 @@ export default function IdentifyPage() {
   if (!txId) return <div className="flex flex-1 items-center justify-center">…</div>;
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-6 md:px-12">
-      <div className="flex w-full max-w-3xl items-center justify-between">
-        <p className="text-lg font-medium">{t('kiosk.identify.title', { amount: formatMxn(amount) })}</p>
+    <div className="flex flex-1 flex-col gap-3 px-4 py-3 md:px-8">
+      <div className="flex items-center justify-between">
+        <p className="text-base font-medium">
+          {t('kiosk.identify.title', { amount: formatMxn(amount) })}
+        </p>
         <Button variant="ghost" size="sm" onClick={() => goFallback(txId)}>
           <X className="size-4" aria-hidden /> {t('common.cancel')}
         </Button>
       </div>
 
       <CameraStage
+        fill
+        className="min-h-0 flex-1"
         videoRef={videoRef}
         progress={progress}
         challenge={stage === 'loading' ? t('kiosk.identify.preparing') : t('kiosk.identify.look')}
         hint={error ?? (hint ? t(hint) : t('kiosk.identify.holdStill'))}
-        showVector={false}
+        debug={debug}
       />
 
-      <p className="max-w-xl text-center text-sm text-muted-foreground">
-        {t('kiosk.identify.privacy')}
-      </p>
-
-      <Button variant="outline" onClick={() => goFallback(txId)}>
-        {t('kiosk.identify.useQr')}
-      </Button>
+      <div className="flex items-center justify-between gap-4">
+        <p className="max-w-2xl text-[11px] leading-snug text-muted-foreground">
+          {t('kiosk.identify.privacy')}
+        </p>
+        <Button variant="outline" size="sm" onClick={() => goFallback(txId)}>
+          {t('kiosk.identify.useQr')}
+        </Button>
+      </div>
     </div>
   );
 }

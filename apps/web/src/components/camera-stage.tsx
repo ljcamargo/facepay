@@ -12,6 +12,10 @@ interface Props {
   showVector?: boolean;
   /** When present, the live camera feed is shown behind the guide. */
   videoRef?: React.RefObject<HTMLVideoElement | null>;
+  /** Fill the available height instead of using a square box. */
+  fill?: boolean;
+  /** Small monospace line for tuning, e.g. "1 rostro · yaw 4° · nitidez 220". */
+  debug?: string | null;
 }
 
 export function CameraStage({
@@ -19,8 +23,10 @@ export function CameraStage({
   challenge,
   hint,
   className,
-  showVector = true,
+  showVector = false,
   videoRef,
+  fill = false,
+  debug,
 }: Props) {
   const pct = Math.round(Math.min(1, Math.max(0, progress)) * 100);
   const bars = Array.from({ length: 32 }, (_, i) => {
@@ -29,8 +35,13 @@ export function CameraStage({
   });
 
   return (
-    <div className={cn('flex flex-col items-center gap-4', className)}>
-      <div className="relative mx-auto aspect-square w-full max-w-[min(72vh,560px)] overflow-hidden rounded-3xl border border-border bg-black">
+    <div className={cn('flex flex-col items-center gap-3', className)}>
+      <div
+        className={cn(
+          'relative w-full overflow-hidden rounded-2xl border border-border bg-black',
+          fill ? 'min-h-0 flex-1' : 'mx-auto aspect-square max-w-[min(72vh,560px)]',
+        )}
+      >
         {videoRef ? (
           <video
             ref={videoRef}
@@ -47,7 +58,7 @@ export function CameraStage({
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(0,0,0,0.35)_100%)]" />
 
         {/* vertical oval: a face is taller than it is wide */}
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[54%] -translate-x-1/2 -translate-y-1/2">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[84%] aspect-[3/4] -translate-x-1/2 -translate-y-1/2">
           <div className="absolute inset-0 rounded-[50%] border-2 border-white/25" />
           <div
             className="absolute inset-0 rounded-[50%] border-2 border-primary transition-[clip-path] duration-200"
@@ -56,11 +67,12 @@ export function CameraStage({
         </div>
       </div>
 
-      <div className="flex w-full max-w-[min(72vh,560px)] flex-col items-center gap-2">
+      <div className={cn('flex w-full flex-col items-center gap-1.5', !fill && 'max-w-[min(72vh,560px)]')}>
         <p className="text-lg font-medium" aria-live="polite">
           {challenge}
         </p>
         {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
+        {debug && <p className="font-mono text-[10px] text-muted-foreground/70">{debug}</p>}
         <div
           className="h-2 w-full overflow-hidden rounded-full bg-muted"
           role="progressbar"

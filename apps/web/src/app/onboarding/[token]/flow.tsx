@@ -46,6 +46,7 @@ export function OnboardingFlow({ token, legal }: Props) {
   const [busy, setBusy] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [hint, setHint] = React.useState<string | null>(null);
+  const [debug, setDebug] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!supabase) {
@@ -106,28 +107,42 @@ export function OnboardingFlow({ token, legal }: Props) {
             streak = ok ? streak + 1 : 0;
             setProgress(Math.min(1, streak / GOOD_FRAMES));
             setHint(ok ? null : gates.find((g) => !g.ok)?.hintKey ?? null);
+            setDebug(
+              `${analysis.faces.length} rostro(s) · yaw ${Math.round(analysis.signals.yaw)}° · nitidez ${Math.round(analysis.frame.sharpness)} · luz ${Math.round(analysis.frame.meanLuma)}`,
+            );
 
             if (streak >= GOOD_FRAMES) {
               if (timer) clearInterval(timer);
               timer = null;
               setBusy(true);
-              const capture = await engine.embed(videoRef.current);
-              await enrollMyFace({
-                vector: capture.embedding.vector,
-                model: capture.embedding.model,
-                version: capture.embedding.version,
-                quality: capture.quality,
-                liveness: capture.liveness,
-                scope: 'global',
-              });
-              if (cancelled) return;
-              setStep('done');
+              try {
+                const capture = await engine.embed(videoRef.current);
+                await enrollMyFace({
+                  vector: capture.embedding.vector,
+                  model: capture.embedding.model,
+                  version: capture.embedding.version,
+                  quality: capture.quality,
+                  liveness: capture.liveness,
+                  scope: 'global',
+                });
+                if (!cancelled) setStep('done');
+              } catch (err) {
+                if (!cancelled) {
+                  const message = err instanceof Error ? err.message : '';
+                  setError(
+                    message.includes('consent')
+                      ? 'Falta tu consentimiento. Vuelve al paso anterior.'
+                      : `No pudimos guardar tu rostro. ${message || 'Intenta otra vez.'}`,
+                  );
+                }
+              } finally {
+                if (!cancelled) setBusy(false);
+              }
             }
           } catch {
             streak = 0;
           } finally {
             busyFrame = false;
-            setBusy(false);
           }
         }, 140);
       } catch (err) {
@@ -311,17 +326,21 @@ export function OnboardingFlow({ token, legal }: Props) {
       )}
 
       {step === 'face' && (
-        <div className="flex flex-col gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">{t('onboarding.face.title')}</h1>
+        <div className="flex flex-1 flex-col gap-3">
+          <h1 className="text-xl font-semibold tracking-tight">{t('onboarding.face.title')}</h1>
           <CameraStage
+            fill
+            className="min-h-0 flex-1"
             videoRef={videoRef}
             progress={progress}
             challenge={t('onboarding.face.look')}
             hint={hint ? t(hint as never) : t('onboarding.face.still')}
-            showVector={false}
+            debug={debug}
           />
-          <p className="text-center text-xs text-muted-foreground">{t('onboarding.face.local')}</p>
-          {busy && <p className="text-center text-sm text-muted-foreground">Guardando…</p>}
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] text-muted-foreground">{t('onboarding.face.local')}</p>
+            {busy && <p className="text-xs font-medium text-primary">Guardando…</p>}
+          </div>
         </div>
       )}
 
