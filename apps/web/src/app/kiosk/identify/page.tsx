@@ -36,10 +36,11 @@ export default function IdentifyPage() {
   const done = React.useRef(false);
 
   const goFallback = React.useCallback(
-    (id: string) => {
+    (id: string, score?: number | null) => {
       if (done.current) return;
       done.current = true;
-      router.replace(`/kiosk/fallback?tx=${id}`);
+      const extra = typeof score === 'number' ? `&score=${score.toFixed(3)}` : '';
+      router.replace(`/kiosk/fallback?tx=${id}${extra}`);
     },
     [router],
   );
@@ -123,11 +124,17 @@ export default function IdentifyPage() {
                 return goFallback(id);
               }
 
-              const match = await identifyFace({
-                vector: capture.embedding.vector,
-                model: capture.embedding.model,
-                storeId: staff.storeId,
-              });
+              let match;
+              try {
+                match = await identifyFace({
+                  vector: capture.embedding.vector,
+                  model: capture.embedding.model,
+                  storeId: staff.storeId,
+                });
+              } catch {
+                setError('No pudimos comparar tu rostro.');
+                return goFallback(id);
+              }
 
               if (match.decision === 'matched' && match.customerId) {
                 if (done.current) return;

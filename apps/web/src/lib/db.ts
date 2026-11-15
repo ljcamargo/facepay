@@ -121,6 +121,20 @@ export async function deleteMyAccount(): Promise<void> {
 }
 
 /** Stores the unit-normalized 1024-d template. Consent is checked in the DB. */
+export async function cancelMyCheckout(txId: string): Promise<void> {
+  const { error } = await client().rpc('cancel_my_checkout', { p_tx: txId });
+  if (error) throw error;
+}
+
+/** Customer starts the payment from their own phone (no face). */
+export async function startPhonePayment(txId: string, phoneE164: string): Promise<void> {
+  const { error } = await client().rpc('start_phone_payment', {
+    p_tx: txId,
+    p_phone: phoneE164,
+  });
+  if (error) throw error;
+}
+
 export async function enrollMyFace(input: {
   vector: Float32Array;
   model: string;
@@ -265,8 +279,10 @@ export async function identifyFace(input: {
   const { data, error } = await kiosk().rpc('identify_customer', {
     p_embedding: vectorToText(input.vector),
     p_model: input.model,
-    p_min_sim: 0.6,
-    p_min_margin: 0.08,
+    // Cross-device (phone enrollment vs tablet camera) needs slack. These are
+    // constants on purpose: tune from /dev/face, not from a UI switch.
+    p_min_sim: 0.45,
+    p_min_margin: 0.05,
     p_store_id: input.storeId,
   });
   if (error) throw error;

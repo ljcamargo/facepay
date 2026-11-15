@@ -15,9 +15,12 @@ export default function FallbackPage() {
   const [txId, setTxId] = React.useState<string | null>(null);
   const [amount, setAmount] = React.useState(0);
   const [origin, setOrigin] = React.useState('');
+  const [score, setScore] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get('tx');
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('tx');
+    setScore(params.get('score'));
     if (!id) {
       router.replace('/kiosk');
       return;
@@ -61,9 +64,16 @@ export default function FallbackPage() {
         <span className="amount text-xl font-semibold">{formatMxn(amount)}</span>
       </div>
 
-      <h1 className="max-w-2xl text-2xl font-semibold tracking-tight">
-        No pudimos identificarte
-      </h1>
+      <div>
+        <h1 className="max-w-2xl text-2xl font-semibold tracking-tight">
+          No pudimos identificarte
+        </h1>
+        {score && (
+          <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+            similitud {score} · umbral 0.450
+          </p>
+        )}
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <button

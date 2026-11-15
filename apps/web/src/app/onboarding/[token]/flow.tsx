@@ -11,7 +11,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { CameraStage } from '@/components/camera-stage';
 import { StepProgress } from '@/components/step-progress';
-import { ensureSession, enrollMyFace, recordConsent, savePhone } from '@/lib/db';
+import {
+  ensureSession,
+  enrollMyFace,
+  recordConsent,
+  savePhone,
+  startPhonePayment,
+  cancelMyCheckout,
+} from '@/lib/db';
 import { supabase } from '@/lib/supabase';
 import type { LegalHashes } from '@/lib/legal';
 
@@ -47,6 +54,9 @@ export function OnboardingFlow({ token, legal }: Props) {
   const [progress, setProgress] = React.useState(0);
   const [hint, setHint] = React.useState<string | null>(null);
   const [debug, setDebug] = React.useState<string | null>(null);
+  const [payState, setPayState] = React.useState<'idle' | 'sending' | 'sent'>('idle');
+  const [cancelled, setCancelled] = React.useState(false);
+  const [payError, setPayError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!supabase) {
@@ -225,25 +235,27 @@ export function OnboardingFlow({ token, legal }: Props) {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-5 py-6">
-      <header className="flex items-start justify-between">
-        <div>
-          <p className="text-lg font-semibold">{t('common.appName')}</p>
-          <p className="text-xs text-muted-foreground">
-            {info?.storeName ?? '—'} · {info ? formatMxn(info.amountCents) : '—'}
-          </p>
-        </div>
-        {step !== 'done' && (
-          <button
-            type="button"
-            onClick={abort}
-            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-          >
-            Cancelar
-          </button>
-        )}
-      </header>
+      {step !== 'done' && (
+        <>
+          <header className="flex items-start justify-between">
+            <div>
+              <p className="text-lg font-semibold">{t('common.appName')}</p>
+              <p className="text-xs text-muted-foreground">
+                {info?.storeName ?? '—'} · {info ? formatMxn(info.amountCents) : '—'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={abort}
+              className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+            >
+              Cancelar
+            </button>
+          </header>
 
-      <StepProgress step={stepNumber} total={steps.length} label={t('onboarding.phone.title')} />
+          <StepProgress step={stepNumber} total={steps.length} label={t('onboarding.phone.title')} />
+        </>
+      )}
 
       {error && (
         <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -344,13 +356,28 @@ export function OnboardingFlow({ token, legal }: Props) {
         </div>
       )}
 
-      {step === 'done' && (
-        <div className="flex flex-col items-center gap-5 text-center">
+      {step === 'done' && cancelled && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+          <h1 className="text-xl font-semibold">Pago cancelado</h1>
+          <p className="text-sm text-muted-foreground">
+            No se envió ninguna solicitud. Pide al cajero que genere otro cobro.
+          </p>
+        </div>
+      )}
+
+      {step === 'done' && !cancelled && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
           <div className="flex size-20 items-center justify-center rounded-full bg-success/15 text-success">
             <Check className="size-10" aria-hidden />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t('onboarding.done.title')}</h1>
-          <p className="text-sm text-muted-foreground">{t('onboarding.done.linked')}</p>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {payState === 'sent' ? 'Solicitud enviada' : t('onboarding.done.title')}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {payState === 'sent'
+              ? 'Aprueba el cobro en la app de tu banco. La tablet ya está esperando.'
+              : t('onboarding.done.linked')}
+          </p>
 
           <Card className="w-full">
             <CardContent className="flex flex-col gap-1 p-5 text-sm">
@@ -371,17 +398,54 @@ export function OnboardingFlow({ token, legal }: Props) {
             </CardContent>
           </Card>
 
-          <p className="rounded-xl bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
-            Listo. Vuelve a mirar la cámara de la tablet para pagar.
-          </p>
+          {payState !== 'sent' && (
+            <>
+              <Button
+                size="lg"
+                className="w-full"
+                disabled={payState === 'sending' || !e164}
+                onClick={async () => {
+                  if (!e164) return;
+                  setPayError(null);
+                  setPayState('sending');
+                  try {
+                    await ensureSession();
+                    await startPhonePayment(token, e164);
+                    setPayState('sent');
+                  } catch {
+                    setPayState('idle');
+                    setPayError('No pudimos enviar la solicitud. Intenta otra vez.');
+                  }
+                }}
+              >
+                {payState === 'sending'
+                  ? 'Enviando…'
+                  : `Pagar ahora con mi celular · ${info ? formatMxn(info.amountCents) : ''}`}
+              </Button>
 
-          <button
-            type="button"
-            onClick={() => router.refresh()}
-            className="text-xs text-muted-foreground underline-offset-4 hover:underline"
-          >
-            Cerrar
-          </button>
+              <p className="text-xs text-muted-foreground">
+                O vuelve a mirar la cámara de la tablet y paga con tu rostro.
+              </p>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await ensureSession();
+                    await cancelMyCheckout(token);
+                    setCancelled(true);
+                  } catch {
+                    setPayError('No pudimos cancelar. Pídele al cajero que lo haga.');
+                  }
+                }}
+                className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+              >
+                Cancelar este pago
+              </button>
+            </>
+          )}
+
+          {payError && <p className="text-sm text-destructive">{payError}</p>}
         </div>
       )}
     </div>
