@@ -17,7 +17,7 @@ import { setTxContext } from '@/lib/tx-context';
 import { hasSupabase } from '@/lib/supabase';
 
 const GOOD_FRAMES = 5; // ~0.7 s of a clean, frontal frame
-const TIMEOUT_MS = 25_000;
+const TIMEOUT_MS = 12_000;
 
 export default function IdentifyPage() {
   const router = useRouter();
@@ -173,21 +173,13 @@ export default function IdentifyPage() {
         </Button>
       </div>
 
-      <div className="relative w-full max-w-xl">
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          className="pointer-events-none absolute size-1 opacity-0"
-          aria-hidden
-        />
-        <CameraStage
-          progress={progress}
-          challenge={stage === 'loading' ? t('kiosk.identify.preparing') : t('kiosk.identify.look')}
-          hint={error ?? (hint ? t(hint) : t('kiosk.identify.holdStill'))}
-          showVector={stage === 'scanning'}
-        />
-      </div>
+      <CameraStage
+        videoRef={videoRef}
+        progress={progress}
+        challenge={stage === 'loading' ? t('kiosk.identify.preparing') : t('kiosk.identify.look')}
+        hint={error ?? (hint ? t(hint) : t('kiosk.identify.holdStill'))}
+        showVector={false}
+      />
 
       <p className="max-w-xl text-center text-sm text-muted-foreground">
         {t('kiosk.identify.privacy')}

@@ -29,6 +29,21 @@ export default function FallbackPage() {
       .catch(() => undefined);
   }, [router]);
 
+  // If the customer starts paying from their phone, the kiosk follows along.
+  React.useEffect(() => {
+    if (!txId) return;
+    const poll = setInterval(() => {
+      void getTx(txId)
+        .then((tx) => {
+          if (!tx) return;
+          if (tx.status === 'paid') router.replace(`/kiosk/receipt/${txId}`);
+          else if (tx.status === 'awaiting_payment') router.replace(`/kiosk/pay/${txId}`);
+        })
+        .catch(() => undefined);
+    }, 1000);
+    return () => clearInterval(poll);
+  }, [txId, router]);
+
   async function cancel() {
     if (txId) await cancelTransaction(txId).catch(() => undefined);
     router.replace('/kiosk');
@@ -74,14 +89,14 @@ export default function FallbackPage() {
 
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5">
           {origin && (
-            <QrPanel value={`${origin}/onboarding/${txId}`} size={150} />
+            <QrPanel value={`${origin}/start/${txId}`} size={150} />
           )}
           <span className="text-center text-xs text-muted-foreground">
-            Regístrate con tu celular
+            Regístrate o paga con tu celular
           </span>
           {origin && (
             <a
-              href={`${origin}/onboarding/${txId}`}
+              href={`${origin}/start/${txId}`}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-primary underline-offset-4 hover:underline"

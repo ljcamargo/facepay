@@ -11,9 +11,18 @@ interface Props {
   className?: string;
   /** Renders the ephemeral vector bars, like the real engine will. */
   showVector?: boolean;
+  /** When present, the live camera feed is shown behind the guide. */
+  videoRef?: React.RefObject<HTMLVideoElement | null>;
 }
 
-export function CameraStage({ progress, challenge, hint, className, showVector = true }: Props) {
+export function CameraStage({
+  progress,
+  challenge,
+  hint,
+  className,
+  showVector = true,
+  videoRef,
+}: Props) {
   const pct = Math.round(Math.min(1, Math.max(0, progress)) * 100);
   const bars = Array.from({ length: 32 }, (_, i) => {
     const wobble = Math.sin(i * 1.7 + pct / 12) * 0.5 + 0.5;
@@ -23,8 +32,19 @@ export function CameraStage({ progress, challenge, hint, className, showVector =
   return (
     <div className={cn('flex flex-col items-center gap-4', className)}>
       <div className="relative aspect-[4/3] w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-[radial-gradient(circle_at_50%_35%,rgba(15,118,110,0.18),transparent_60%)]">
-        {/* simulated camera feed */}
-        <div className="absolute inset-0 bg-gradient-to-b from-muted/40 via-transparent to-muted/60" />
+        {videoRef ? (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 size-full -scale-x-100 object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-b from-muted/40 via-transparent to-muted/60" />
+        )}
+        {/* vignette so the guide stays readable over a bright image */}
+        <div className="pointer-events-none absolute inset-0 bg-black/25" />
 
         {/* face oval */}
         <div className="absolute left-1/2 top-1/2 size-[52%] -translate-x-1/2 -translate-y-1/2">
@@ -42,7 +62,7 @@ export function CameraStage({ progress, challenge, hint, className, showVector =
           style={{ top: `${8 + pct * 0.84}%` }}
         />
 
-        <div className="absolute inset-x-0 bottom-0 flex items-end justify-center gap-[2px] p-3">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center gap-[2px] p-3">
           {showVector &&
             bars.map((h, i) => (
               <span

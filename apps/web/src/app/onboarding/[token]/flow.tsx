@@ -15,7 +15,7 @@ import { ensureSession, enrollMyFace, recordConsent, savePhone } from '@/lib/db'
 import { supabase } from '@/lib/supabase';
 import type { LegalHashes } from '@/lib/legal';
 
-type Step = 'phone' | 'consent' | 'face' | 'done';
+type Step = 'phone' | 'consent' | 'face' | 'done' | 'cancelled';
 
 interface Props {
   token: string; // the kiosk's transaction id
@@ -165,6 +165,10 @@ export function OnboardingFlow({ token, legal }: Props) {
   const steps: Step[] = ['phone', 'consent', 'face', 'done'];
   const stepNumber = Math.max(1, steps.indexOf(step) + 1);
 
+  function abort() {
+    setStep('cancelled');
+  }
+
   async function submitPhone(e: React.FormEvent) {
     e.preventDefault();
     const normalized = toE164Mx(phone);
@@ -205,13 +209,22 @@ export function OnboardingFlow({ token, legal }: Props) {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-5 py-6">
-      <header className="flex items-center justify-between">
+      <header className="flex items-start justify-between">
         <div>
           <p className="text-lg font-semibold">{t('common.appName')}</p>
           <p className="text-xs text-muted-foreground">
             {info?.storeName ?? '—'} · {info ? formatMxn(info.amountCents) : '—'}
           </p>
         </div>
+        {step !== 'done' && step !== 'cancelled' && (
+          <button
+            type="button"
+            onClick={abort}
+            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Cancelar
+          </button>
+        )}
       </header>
 
       <StepProgress step={stepNumber} total={steps.length} label={t('onboarding.phone.title')} />
@@ -299,23 +312,24 @@ export function OnboardingFlow({ token, legal }: Props) {
       {step === 'face' && (
         <div className="flex flex-col gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">{t('onboarding.face.title')}</h1>
-          <div className="relative">
-            <video
-              ref={videoRef}
-              playsInline
-              muted
-              className="pointer-events-none absolute size-1 opacity-0"
-              aria-hidden
-            />
-            <CameraStage
-              progress={progress}
-              challenge={t('onboarding.face.look')}
-              hint={hint ? t(hint as never) : t('onboarding.face.still')}
-              showVector
-            />
-          </div>
+          <CameraStage
+            videoRef={videoRef}
+            progress={progress}
+            challenge={t('onboarding.face.look')}
+            hint={hint ? t(hint as never) : t('onboarding.face.still')}
+            showVector={false}
+          />
           <p className="text-center text-xs text-muted-foreground">{t('onboarding.face.local')}</p>
           {busy && <p className="text-center text-sm text-muted-foreground">Guardando…</p>}
+        </div>
+      )}
+
+      {step === 'cancelled' && (
+        <div className="flex flex-col items-center gap-4 py-10 text-center">
+          <h1 className="text-xl font-semibold">Registro cancelado</h1>
+          <p className="text-sm text-muted-foreground">
+            No guardamos nada. Puedes intentarlo de nuevo escaneando el código de la tablet.
+          </p>
         </div>
       )}
 
