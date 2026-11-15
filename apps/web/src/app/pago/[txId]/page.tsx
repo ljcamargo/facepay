@@ -18,6 +18,21 @@ export default function PhonePayPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [done, setDone] = React.useState(false);
+  const [cancelled, setCancelled] = React.useState(false);
+
+  async function cancelPayment() {
+    if (!supabase || !params?.txId) return;
+    setBusy(true);
+    try {
+      await ensureSession();
+      await supabase.rpc('cancel_my_checkout', { p_tx: params.txId });
+      setCancelled(true);
+    } catch {
+      setError('No pudimos cancelar. Pídele al cajero que lo haga.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   React.useEffect(() => {
     if (!supabase || !params?.txId) return;
@@ -47,6 +62,15 @@ export default function PhonePayPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (cancelled) {
+    return (
+      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-3 px-5 text-center">
+        <h1 className="text-xl font-semibold">Pago cancelado</h1>
+        <p className="text-sm text-muted-foreground">No se envió ninguna solicitud.</p>
+      </div>
+    );
   }
 
   if (done) {
@@ -105,6 +129,15 @@ export default function PhonePayPage() {
           Usamos tu número solo para enviarte este cobro. Puedes borrarlo después.
         </CardContent>
       </Card>
+
+      <button
+        type="button"
+        onClick={() => void cancelPayment()}
+        disabled={busy}
+        className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+      >
+        Cancelar este pago
+      </button>
     </div>
   );
 }

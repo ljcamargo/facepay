@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { ScanFace, Smartphone } from 'lucide-react';
 import { formatMxn } from '@facepay/shared';
 import { Card, CardContent } from '@/components/ui/card';
+import { ensureSession } from '@/lib/db';
 import { supabase } from '@/lib/supabase';
 
 /** QR landing on the customer's phone: enroll with a face, or just pay. */
@@ -13,6 +14,25 @@ export default function StartPage() {
   const params = useParams<{ txId: string }>();
   const [info, setInfo] = React.useState<{ amountCents: number; storeName: string } | null>(null);
   const [missing, setMissing] = React.useState(false);
+  const [cancelled, setCancelled] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const [cancelError, setCancelError] = React.useState<string | null>(null);
+
+  async function cancelPayment() {
+    if (!supabase || !params?.txId) return;
+    setBusy(true);
+    setCancelError(null);
+    try {
+      await ensureSession();
+      const { error } = await supabase.rpc('cancel_my_checkout', { p_tx: params.txId });
+      if (error) throw error;
+      setCancelled(true);
+    } catch {
+      setCancelError('No pudimos cancelar. Pídele al cajero que lo haga.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   React.useEffect(() => {
     if (!supabase) {
@@ -30,6 +50,17 @@ export default function StartPage() {
       }
     })();
   }, [params?.txId]);
+
+  if (cancelled) {
+    return (
+      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-3 px-5 text-center">
+        <h1 className="text-xl font-semibold">Pago cancelado</h1>
+        <p className="text-sm text-muted-foreground">
+          No se envió ninguna solicitud. Puedes pedirle al cajero que genere otra.
+        </p>
+      </div>
+    );
+  }
 
   if (missing) {
     return (
@@ -83,6 +114,16 @@ export default function StartPage() {
           El cobro lo autorizas siempre en la app de tu banco. FacePay nunca mueve dinero.
         </CardContent>
       </Card>
+
+      <button
+        type="button"
+        onClick={() => void cancelPayment()}
+        disabled={busy}
+        className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+      >
+        Cancelar este pago
+      </button>
+      {cancelError && <p className="text-center text-xs text-destructive">{cancelError}</p>}
     </div>
   );
 }

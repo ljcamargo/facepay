@@ -6,11 +6,13 @@ import type { FaceGeometry, FrameStats, GateResult, GateThresholds } from './typ
  * unit-tested, which is why the thresholds can be tuned with confidence.
  */
 export const DEFAULT_THRESHOLDS: GateThresholds = {
-  maxYawDeg: 20,
-  maxPitchDeg: 15,
-  maxRollDeg: 15,
-  minFaceRatio: 0.28,
-  minSharpness: 60,
+  // Deliberately forgiving: this is an MVP and a soft webcam is not a portal
+  // camera. Values measured on /dev/face; tighten after calibration.
+  maxYawDeg: 30,
+  maxPitchDeg: 25,
+  maxRollDeg: 25,
+  minFaceRatio: 0.2,
+  minSharpness: 18,
   minLuma: 60,
   maxLuma: 205,
   maxClippedRatio: 0.05,

@@ -55,7 +55,7 @@ describe('evaluateGates', () => {
   });
 
   test('extreme yaw fails frontal', () => {
-    const gates = evaluateGates([face({ yaw: 35 })], frame);
+    const gates = evaluateGates([face({ yaw: 45 })], frame);
     expect(byId(gates).frontal).toBe(false);
   });
 
@@ -114,6 +114,6 @@ describe('isInsideFrame', () => {
 });
 
 test('default thresholds are the documented priors', () => {
-  expect(DEFAULT_THRESHOLDS.maxYawDeg).toBe(20);
-  expect(DEFAULT_THRESHOLDS.minFaceRatio).toBeCloseTo(0.28, 5);
+  expect(DEFAULT_THRESHOLDS.maxYawDeg).toBe(30);
+  expect(DEFAULT_THRESHOLDS.minFaceRatio).toBeCloseTo(0.2, 5);
 });

@@ -38,6 +38,7 @@ export default function FallbackPage() {
           if (!tx) return;
           if (tx.status === 'paid') router.replace(`/kiosk/receipt/${txId}`);
           else if (tx.status === 'awaiting_payment') router.replace(`/kiosk/pay/${txId}`);
+          else if (tx.status === 'cancelled' || tx.status === 'expired') router.replace('/kiosk');
         })
         .catch(() => undefined);
     }, 1000);
