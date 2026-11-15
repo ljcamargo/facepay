@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, LogIn } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { t } from '@facepay/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,9 +39,7 @@ export default function KioskSetupPage() {
     <div className="flex flex-1 items-center justify-center px-6 py-10">
       <Card className="w-full max-w-md">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <LogIn className="size-7" aria-hidden />
-          </div>
+          <img src="/brand/facepay.svg" alt="FacePay MX" width={56} height={56} className="mb-2 size-14" />
           <CardTitle className="text-xl">{t('kiosk.setup.title')}</CardTitle>
           <p className="text-sm text-muted-foreground">
             Entra con la cuenta de la tienda. La sesión queda abierta en esta tablet.

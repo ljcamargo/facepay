@@ -7,6 +7,15 @@ export const metadata: Metadata = {
   description:
     'Punto de venta con identificación por rostro y cobro CoDi®. El pago se autoriza en tu banco.',
   applicationName: 'FacePay MX',
+  manifest: '/site.webmanifest',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
   robots: { index: false, follow: false },
 };
 

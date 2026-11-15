@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { History, Settings, Wifi } from 'lucide-react';
 import { t } from '@facepay/shared';
-import { MockBadge } from '@/components/mock-badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +20,8 @@ export function KioskHeader({ storeName, deviceLabel, className }: Props) {
         className,
       )}
     >
-      <div className="flex items-baseline gap-3">
+      <div className="flex items-center gap-3">
+        <img src="/brand/facepay.svg" alt="" width={28} height={28} className="size-7" />
         <span className="text-lg font-semibold tracking-tight">{t('common.appName')}</span>
         <span className="text-sm text-muted-foreground">
           {storeName} · {deviceLabel}
@@ -29,7 +29,6 @@ export function KioskHeader({ storeName, deviceLabel, className }: Props) {
       </div>
 
       <div className="flex items-center gap-2">
-        <MockBadge />
         <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex">
           <Wifi className="size-3.5 text-success" aria-hidden />
           {t('common.online')}

@@ -53,7 +53,6 @@ export function OnboardingFlow({ token, legal }: Props) {
   const [busy, setBusy] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [hint, setHint] = React.useState<string | null>(null);
-  const [debug, setDebug] = React.useState<string | null>(null);
   const [payState, setPayState] = React.useState<'idle' | 'sending' | 'sent'>('idle');
   const [cancelled, setCancelled] = React.useState(false);
   const [payError, setPayError] = React.useState<string | null>(null);
@@ -117,9 +116,6 @@ export function OnboardingFlow({ token, legal }: Props) {
             streak = ok ? streak + 1 : 0;
             setProgress(Math.min(1, streak / GOOD_FRAMES));
             setHint(ok ? null : gates.find((g) => !g.ok)?.hintKey ?? null);
-            setDebug(
-              `${analysis.faces.length} rostro(s) · yaw ${Math.round(analysis.signals.yaw)}° · nitidez ${Math.round(analysis.frame.sharpness)} · luz ${Math.round(analysis.frame.meanLuma)}`,
-            );
 
             if (streak >= GOOD_FRAMES) {
               if (timer) clearInterval(timer);
@@ -238,11 +234,14 @@ export function OnboardingFlow({ token, legal }: Props) {
       {step !== 'done' && (
         <>
           <header className="flex items-start justify-between">
-            <div>
+            <div className="flex items-center gap-2.5">
+              <img src="/brand/facepay.svg" alt="" width={26} height={26} className="size-6" />
+              <div>
               <p className="text-lg font-semibold">{t('common.appName')}</p>
               <p className="text-xs text-muted-foreground">
                 {info?.storeName ?? '—'} · {info ? formatMxn(info.amountCents) : '—'}
               </p>
+              </div>
             </div>
             <button
               type="button"
@@ -347,7 +346,6 @@ export function OnboardingFlow({ token, legal }: Props) {
             progress={progress}
             challenge={t('onboarding.face.look')}
             hint={hint ? t(hint as never) : t('onboarding.face.still')}
-            debug={debug}
           />
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] text-muted-foreground">{t('onboarding.face.local')}</p>

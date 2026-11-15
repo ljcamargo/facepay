@@ -30,7 +30,6 @@ export default function IdentifyPage() {
   const [stage, setStage] = React.useState<'loading' | 'scanning' | 'error'>('loading');
   const [progress, setProgress] = React.useState(0);
   const [hint, setHint] = React.useState<CopyKey | null>(null);
-  const [debug, setDebug] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   const done = React.useRef(false);
@@ -104,9 +103,6 @@ export default function IdentifyPage() {
             const analysis = await engine.analyze(videoRef.current);
             const gates = evaluateGates(analysis.faces, analysis.frame);
             setHint(worstHint(gates));
-            setDebug(
-              `${analysis.faces.length} rostro(s) · yaw ${Math.round(analysis.signals.yaw)}° · nitidez ${Math.round(analysis.frame.sharpness)} · luz ${Math.round(analysis.frame.meanLuma)}`,
-            );
 
             const ok = gates.every((g) => g.ok);
             streak = ok ? streak + 1 : 0;
@@ -201,7 +197,6 @@ export default function IdentifyPage() {
         progress={progress}
         challenge={stage === 'loading' ? t('kiosk.identify.preparing') : t('kiosk.identify.look')}
         hint={error ?? (hint ? t(hint) : t('kiosk.identify.holdStill'))}
-        debug={debug}
       />
 
       <div className="flex items-center justify-between gap-4">

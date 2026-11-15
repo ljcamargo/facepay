@@ -83,7 +83,7 @@ export const es = {
   'kiosk.fallback.phoneTime': 'registro después',
   'kiosk.fallback.store': '¿Solo quieres pagar? Pídele al cajero otro método.',
   'kiosk.fallback.openHere': 'Abrir esta pantalla en este navegador (demo)',
-  'kiosk.fallback.remaining': 'La sesión expira en {time}',
+  'kiosk.fallback.remaining': 'La sesión expira en',
 
   'kiosk.wait.title': 'Esperando a tu banco',
   'kiosk.wait.sent': 'Enviamos una solicitud de {amount} a {phone}',
@@ -92,7 +92,7 @@ export const es = {
   'kiosk.wait.check': 'Ya pagué, actualizar',
   'kiosk.wait.useQr': 'Usar QR',
   'kiosk.wait.slow': '¿No llega? Algunos bancos tardan hasta 1 minuto en mostrarla.',
-  'kiosk.wait.expires': 'La solicitud expira en {time}',
+  'kiosk.wait.expires': 'La solicitud expira en',
 
   'kiosk.receipt.title': 'Pago recibido',
   'kiosk.receipt.folio': 'Folio',

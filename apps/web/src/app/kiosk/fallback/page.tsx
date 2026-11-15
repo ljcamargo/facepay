@@ -15,12 +15,10 @@ export default function FallbackPage() {
   const [txId, setTxId] = React.useState<string | null>(null);
   const [amount, setAmount] = React.useState(0);
   const [origin, setOrigin] = React.useState('');
-  const [score, setScore] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get('tx');
-    setScore(params.get('score'));
     if (!id) {
       router.replace('/kiosk');
       return;
@@ -68,13 +66,6 @@ export default function FallbackPage() {
         <h1 className="max-w-2xl text-2xl font-semibold tracking-tight">
           No pudimos identificarte
         </h1>
-        {score && (
-          <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-            {score === '-1'
-              ? 'la comparación falló (revisa la consola)'
-              : `similitud ${score} · umbral 0.400`}
-          </p>
-        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -97,7 +88,7 @@ export default function FallbackPage() {
             <ScanFace className="size-6" aria-hidden />
           </span>
           <span className="text-base font-medium">Pagar con QR CoDi</span>
-          <span className="text-xs text-muted-foreground">Disponible en la siguiente fase.</span>
+          <span className="text-xs text-muted-foreground">Próximamente.</span>
         </div>
 
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5">

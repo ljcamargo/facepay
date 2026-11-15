@@ -35,7 +35,8 @@ export default async function LegalPage({ params }: { params: Promise<{ slug: st
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-6 px-5 py-8">
       <nav className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-        <Link href="/kiosk" className="hover:text-foreground">
+        <Link href="/kiosk" className="inline-flex items-center gap-2 hover:text-foreground">
+          <img src="/brand/facepay.svg" alt="" width={22} height={22} className="size-[22px]" />
           FacePay MX
         </Link>
         <span aria-hidden>·</span>
