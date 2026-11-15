@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
     return config;
   },
   poweredByHeader: false,
+  // Netlify exposes the commit being built; show it in Ajustes so a stale bundle
+  // is obvious instead of guessing.
+  env: { NEXT_PUBLIC_COMMIT_REF: process.env.COMMIT_REF ?? 'dev' },
   // /onboarding/[token] hashes the legal markdown at request time to build the
   // consent evidence, so those files must ship with the server bundle.
   outputFileTracingIncludes: {

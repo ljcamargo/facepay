@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, RotateCcw, ScanFace } from 'lucide-react';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
 import { formatMxn, t } from '@facepay/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -68,7 +68,29 @@ export default function FallbackPage() {
         </h1>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5">
+          {origin ? (
+            <QrPanel value={`${origin}/start/${txId}`} size={168} />
+          ) : (
+            <div className="h-[168px] w-[168px] animate-pulse rounded-lg bg-muted" />
+          )}
+          <span className="text-center text-sm font-medium">Regístrate o paga con tu celular</span>
+          <span className="text-center text-xs text-muted-foreground">
+            Escanea con tu teléfono. Toma menos de un minuto.
+          </span>
+          {origin && (
+            <a
+              href={`${origin}/start/${txId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-primary underline-offset-4 hover:underline"
+            >
+              Abrir en este navegador (demo)
+            </a>
+          )}
+        </div>
+
         <button
           type="button"
           onClick={() => router.replace(`/kiosk/identify?tx=${txId}`)}
@@ -82,33 +104,6 @@ export default function FallbackPage() {
             Si acabas de registrarte, ya deberíamos reconocerte.
           </span>
         </button>
-
-        <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-border p-5 opacity-60">
-          <span className="flex size-12 items-center justify-center rounded-xl bg-muted text-foreground">
-            <ScanFace className="size-6" aria-hidden />
-          </span>
-          <span className="text-base font-medium">Pagar con QR CoDi</span>
-          <span className="text-xs text-muted-foreground">Próximamente.</span>
-        </div>
-
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5">
-          {origin && (
-            <QrPanel value={`${origin}/start/${txId}`} size={150} />
-          )}
-          <span className="text-center text-xs text-muted-foreground">
-            Regístrate o paga con tu celular
-          </span>
-          {origin && (
-            <a
-              href={`${origin}/start/${txId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-primary underline-offset-4 hover:underline"
-            >
-              Abrir en este navegador (demo)
-            </a>
-          )}
-        </div>
       </div>
 
       <Card>

@@ -122,7 +122,9 @@ export default function SettingsPage() {
             <Link href="/dev/calibrate" className="text-primary underline-offset-4 hover:underline">
               Calibración de umbral
             </Link>
-            <p className="mt-2 text-muted-foreground">v0.3.0 · Fase A (cobro simulado)</p>
+            <p className="mt-2 font-mono text-[10px] text-muted-foreground">
+              build {process.env.NEXT_PUBLIC_COMMIT_REF?.slice(0, 7) ?? 'dev'}
+            </p>
           </CardContent>
         </Card>
       </div>
