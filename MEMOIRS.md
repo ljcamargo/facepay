@@ -19,6 +19,29 @@ Entry template:
 
 ---
 
+## 2026-11-15 — MVP stage 1 closed — agent
+**Intent:** close the first demonstrable stage: real camera, real database, real pey call, real webhook.
+
+**Working end to end:**
+- Vendor login → checkout → face identification (Human embedding + pgvector) → 5 s auto-send → CoDi push
+  (pey) → webhook → receipt; or "solo pagar" with the phone typed on the customer's device; or
+  registration via QR and then face payment.
+- Per-store **Modo simulación** (default off) so the camera can be exercised without waking phones;
+  `SANDBOX` shows in the kiosk header and on the pay/receipt screens while it is on.
+- `payments-sync` covers a late/lost webhook by asking pey for the transaction.
+
+**Final copy tweaks:** the phone field says the number must be registered with CoDi; a rejected push
+says "Revisa que tu celular esté asociado a CoDi en tu banco"; the simulation checkbox label is static
+("Simulado (no envía solicitud a pey)") so the checkbox does not read as a negation.
+
+**Known state:**
+- The real push fails with pey `CREATE_CODI_PN_ERROR` until the payer's cell is CoDi-enrolled and the
+  key's CoDi account is ACTIVE at Banxico. Documented, expected, not an app bug.
+- Still pending for a pilot: legal placeholders (`{{LEGAL_NAME}}`, `{{RFC}}`, `{{PRIVACY_EMAIL}}`,
+  `{{ARCO_URL}}`), `/dev/*` gating, retention cron, and per-store pey keys.
+
+**Next:** pilot hardening (Phase 11 items) or the per-store key model, whichever the owner picks.
+
 ## 2026-11-15 — Phase B: pey push + webhook (key installed) — agent
 **Intent:** replace the simulated intent with the real CoDi push, leaving a per-store switch so the
 camera can still be tested without burning requests.

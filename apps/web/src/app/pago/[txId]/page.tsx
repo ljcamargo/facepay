@@ -64,7 +64,7 @@ export default function PhonePayPage() {
         code === 'PEY_PHONE_NOT_ENROLLED'
           ? 'Ese número no tiene CoDi activo en su banco. Regístralo en la app de tu banco o elige otro método.'
           : code === 'PEY_REJECTED' || code === 'CREATE_CODI_PN_ERROR'
-            ? 'El banco no pudo crear la solicitud. Revisa que tu celular tenga CoDi activo en tu banco.'
+            ? 'Revisa que tu celular esté asociado a CoDi en tu banco.'
             : `No pudimos enviar la solicitud (${code}). Pide al cajero que la genere de nuevo.`,
       );
     } finally {
@@ -111,7 +111,7 @@ export default function PhonePayPage() {
           {t('onboarding.phone.label')}
         </label>
         <p className="-mt-1 text-xs text-muted-foreground">
-          Este número debe tener <strong>CoDi activo</strong> en tu banco. Si no, el cobro no llega.
+          El número debe estar registrado con <strong>CoDi</strong> en tu banco.
         </p>
         <Input
           id="phone"

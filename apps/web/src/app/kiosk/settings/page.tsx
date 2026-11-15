@@ -105,7 +105,7 @@ export default function SettingsPage() {
                 onChange={(e) => void toggleMock(e.target.checked)}
                 className="size-5 accent-[var(--primary)]"
               />
-              <span>{mock ? 'Simulado' : 'API real (pey.mx)'}</span>
+              <span>Simulado (no envía solicitud a pey)</span>
             </label>
             {saved && <p className="text-xs text-success">Guardado</p>}
           </CardContent>
