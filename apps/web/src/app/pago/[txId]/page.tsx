@@ -65,8 +65,6 @@ export default function PhonePayPage() {
           ? 'Ese número no tiene CoDi activo en su banco. Regístralo en la app de tu banco o elige otro método.'
           : code === 'PEY_REJECTED' || code === 'CREATE_CODI_PN_ERROR'
             ? 'El banco no pudo crear la solicitud. Revisa que tu celular tenga CoDi activo en tu banco.'
-            : code === 'PEY_REJECTED'
-            ? 'El banco no aceptó la solicitud. Revisa que tu CoDi esté activo.'
             : `No pudimos enviar la solicitud (${code}). Pide al cajero que la genere de nuevo.`,
       );
     } finally {
