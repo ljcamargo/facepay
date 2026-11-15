@@ -21,6 +21,7 @@ import {
   type GateResult,
 } from '@facepay/face-engine';
 import { t, type CopyKey } from '@facepay/shared';
+import { getStaffSession, identifyFace } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,6 +63,8 @@ export default function FaceHarnessPage() {
   const [challenge, setChallenge] = React.useState<ChallengeState | null>(null);
   const [challengeKind, setChallengeKind] = React.useState<ChallengeKind>('blink');
   const [withHands, setWithHands] = React.useState(false);
+  const [match, setMatch] = React.useState<string | null>(null);
+  const prevVector = React.useRef<Float32Array | null>(null);
 
   const stop = React.useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -199,6 +202,37 @@ export default function FaceHarnessPage() {
         head: Array.from({ length: 8 }, (_, i) => (vector[i] ?? 0).toFixed(4)),
         norm: Math.sqrt(squares),
       });
+
+      // Repeatability: two captures of the same face on this camera should be high.
+      const prev = prevVector.current;
+      let repeat = 'primera captura';
+      if (prev) {
+        let dot = 0;
+        for (let i = 0; i < vector.length; i += 1) dot += (prev[i] ?? 0) * (vector[i] ?? 0);
+        repeat = `repetición vs captura anterior: ${dot.toFixed(3)}`;
+      }
+      prevVector.current = vector.slice();
+
+      // Does it match the template stored in Postgres?
+      try {
+        const staff = await getStaffSession();
+        if (!staff) {
+          setMatch(`${repeat} · sin sesión de caja: entra en /kiosk para comparar con la BD`);
+        } else {
+          const found = await identifyFace({
+            vector,
+            model: result.embedding.model,
+            storeId: staff.storeId,
+          });
+          setMatch(
+            `${repeat} · BD: ${found.decision}${
+              found.similarity === null ? '' : ` · similitud ${found.similarity.toFixed(3)}`
+            }`,
+          );
+        }
+      } catch (err) {
+        setMatch(`${repeat} · comparación falló: ${err instanceof Error ? err.message : 'error'}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -360,6 +394,7 @@ export default function FaceHarnessPage() {
             <p className="break-all font-mono text-[10px] text-muted-foreground">
               primeros 8 valores: [{capture.head.join(', ')}, …]
             </p>
+            {match && <p className="text-xs font-medium text-primary">{match}</p>}
             <p className="text-xs text-muted-foreground">
               Esto es una representación de los primeros valores. El vector completo no se muestra ni
               se guarda aquí.
