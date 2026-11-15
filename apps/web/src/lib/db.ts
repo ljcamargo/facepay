@@ -269,6 +269,11 @@ export async function sendPush(txId: string): Promise<void> {
   if (data?.error) throw new Error(data.error.message ?? 'push failed');
 }
 
+/** Asks pey for the current status; covers a late/lost webhook. */
+export async function syncPayment(txId: string): Promise<void> {
+  await kiosk().functions.invoke('payments-sync', { body: { transactionId: txId } }).catch(() => undefined);
+}
+
 /** Simulation only: called by the kiosk while the provider id is `mock-…`. */
 export async function demoMarkPaid(txId: string): Promise<Transaction> {
   const { data, error } = await kiosk().rpc('demo_mark_paid', { p_tx: txId });

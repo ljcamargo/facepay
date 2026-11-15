@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { formatMxn, t } from '@facepay/shared';
 import { Button } from '@/components/ui/button';
 import { Countdown } from '@/components/countdown';
-import { cancelTransaction, demoMarkPaid, getTx } from '@/lib/db';
+import { cancelTransaction, demoMarkPaid, getTx, syncPayment } from '@/lib/db';
 import { getTxContext } from '@/lib/tx-context';
 
 /** How long the fake bank takes to "approve". Removed in Phase B. */
@@ -35,6 +35,10 @@ export default function PayPage() {
 
     void load();
     const poll = setInterval(load, 900);
+    // Webhook still authoritative; this only rescues a late/one-off delivery.
+    const sync = setInterval(() => {
+      void syncPayment(id).then(load);
+    }, 8000);
     const simulate = setTimeout(() => {
       if (simulated.current) return;
       simulated.current = true;
@@ -50,6 +54,7 @@ export default function PayPage() {
     return () => {
       active = false;
       clearInterval(poll);
+      clearInterval(sync);
       clearTimeout(simulate);
     };
   }, [params?.txId]);

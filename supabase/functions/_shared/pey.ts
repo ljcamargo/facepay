@@ -81,3 +81,39 @@ export function numRefFor(txId: string): string {
   for (const ch of txId.replace(/-/g, '')) hash = (hash * 31 + ch.charCodeAt(0)) % 9_999_999;
   return String(hash).padStart(7, '0').slice(-7);
 }
+
+
+export interface TxLookup {
+  ok: boolean;
+  status: 'PENDING' | 'PAID' | 'UNKNOWN';
+  amount?: number;
+  datePaid?: number;
+  clabe?: string | null;
+  bankCode?: number | null;
+  error?: string;
+}
+
+/** GET /transaction/{id} — used when a webhook is late or lost. */
+export async function getTransaction(peyId: string): Promise<TxLookup> {
+  const key = Deno.env.get('PEY_API_KEY');
+  if (!key) return { ok: false, status: 'UNKNOWN', error: 'NO_API_KEY' };
+
+  try {
+    const res = await fetch(`${BASE}/transaction/${peyId}`, {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) return { ok: false, status: 'UNKNOWN', error: `HTTP ${res.status}` };
+    const body = await res.json();
+    const meta = (body.metadata ?? {}) as Record<string, unknown>;
+    return {
+      ok: true,
+      status: body.status === 'PAID' ? 'PAID' : 'PENDING',
+      amount: typeof body.amount === 'number' ? body.amount : undefined,
+      datePaid: typeof body.datePaid === 'number' ? body.datePaid : undefined,
+      clabe: typeof meta.clabe === 'string' ? meta.clabe : null,
+      bankCode: typeof meta.bankCode === 'number' ? meta.bankCode : null,
+    };
+  } catch (err) {
+    return { ok: false, status: 'UNKNOWN', error: err instanceof Error ? err.message : 'network' };
+  }
+}
