@@ -70,7 +70,9 @@ export default function FallbackPage() {
         </h1>
         {score && (
           <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-            similitud {score} · umbral 0.450
+            {score === '-1'
+              ? 'la comparación falló (revisa la consola)'
+              : `similitud ${score} · umbral 0.400`}
           </p>
         )}
       </div>

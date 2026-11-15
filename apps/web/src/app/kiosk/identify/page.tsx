@@ -131,9 +131,9 @@ export default function IdentifyPage() {
                   model: capture.embedding.model,
                   storeId: staff.storeId,
                 });
-              } catch {
-                setError('No pudimos comparar tu rostro.');
-                return goFallback(id);
+              } catch (err) {
+                console.error('identify_customer failed', err);
+                return goFallback(id, -1);
               }
 
               if (match.decision === 'matched' && match.customerId) {
@@ -148,7 +148,7 @@ export default function IdentifyPage() {
                 });
                 router.replace(`/kiosk/confirm?tx=${id}`);
               } else {
-                goFallback(id);
+                goFallback(id, match.similarity);
               }
             }
           } catch {

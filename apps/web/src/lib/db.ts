@@ -281,7 +281,7 @@ export async function identifyFace(input: {
     p_model: input.model,
     // Cross-device (phone enrollment vs tablet camera) needs slack. These are
     // constants on purpose: tune from /dev/face, not from a UI switch.
-    p_min_sim: 0.45,
+    p_min_sim: 0.4,
     p_min_margin: 0.05,
     p_store_id: input.storeId,
   });
