@@ -57,8 +57,9 @@ export default function PhonePayPage() {
       });
       if (rpcError) throw rpcError;
       setDone(true);
-    } catch {
-      setError('No pudimos enviar la solicitud. Pide al cajero que la genere de nuevo.');
+    } catch (err) {
+      const code = err instanceof Error ? err.message : 'ERROR';
+      setError(`No pudimos enviar la solicitud (${code}). Pide al cajero que la genere de nuevo.`);
     } finally {
       setBusy(false);
     }

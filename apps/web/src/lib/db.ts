@@ -131,8 +131,18 @@ export async function startPhonePayment(txId: string, phoneE164: string): Promis
   const { data, error } = await client().functions.invoke('payments-phone', {
     body: { transactionId: txId, phone: phoneE164 },
   });
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error.message ?? 'push failed');
+
+  if (error) {
+    let code = 'INVOKE_FAILED';
+    try {
+      const body = await (error as { context?: Response }).context?.json();
+      code = body?.error?.code ?? code;
+    } catch {
+      /* no body */
+    }
+    throw new Error(code);
+  }
+  if (data?.error) throw new Error(data.error.code ?? 'PUSH_FAILED');
 }
 
 export async function getPeyMock(): Promise<boolean> {

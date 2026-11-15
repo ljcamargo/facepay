@@ -15,13 +15,29 @@ Deno.serve(async (req) => {
   try {
     const customerId = await requireCustomer(req);
     if (!customerId) {
-      return json({ error: { code: 'UNAUTHORIZED', message: 'Sesión inválida', requestId: rid } }, 401);
+      const reason = req.headers.get('Authorization') ? 'invalid_jwt' : 'missing_jwt';
+      // Durable breadcrumb: the dashboard log is the only other place to look.
+      await adminClient().from('audit_log').insert({
+        actor_type: 'system',
+        action: 'payment.phone_rejected',
+        entity: 'transactions',
+        data: { code: 'UNAUTHORIZED', reason, requestId: rid },
+      });
+      return json(
+        { error: { code: 'UNAUTHORIZED', message: `Sesión inválida (${reason})`, requestId: rid } },
+        401,
+      );
     }
 
     const body = await req.json().catch(() => ({}));
     const transactionId: string | undefined = body.transactionId;
     const rawPhone: string | undefined = body.phone;
     if (!transactionId || !rawPhone) {
+      await adminClient().from('audit_log').insert({
+        actor_type: 'system',
+        action: 'payment.phone_rejected',
+        data: { code: 'VALIDATION', hasTx: Boolean(transactionId), hasPhone: Boolean(rawPhone), requestId: rid },
+      });
       return json({ error: { code: 'VALIDATION', message: 'Faltan datos', requestId: rid } }, 400);
     }
 
@@ -40,6 +56,17 @@ Deno.serve(async (req) => {
 
     const fresh = tx && Date.now() - new Date(tx.created_at).getTime() < 2 * 60 * 60 * 1000;
     if (!tx || tx.status !== 'created' || !fresh) {
+      await admin.from('audit_log').insert({
+        actor_type: 'system',
+        action: 'payment.phone_rejected',
+        data: {
+          code: 'NOT_FOUND',
+          found: Boolean(tx),
+          status: tx?.status ?? null,
+          fresh,
+          requestId: rid,
+        },
+      });
       return json({ error: { code: 'NOT_FOUND', message: 'El cobro ya no está disponible', requestId: rid } }, 404);
     }
 
