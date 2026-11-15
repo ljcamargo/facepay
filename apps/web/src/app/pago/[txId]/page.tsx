@@ -7,7 +7,7 @@ import { formatMxInput, formatMxn, t, toE164Mx } from '@facepay/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ensureSession } from '@/lib/db';
+import { ensureSession, startPhonePayment } from '@/lib/db';
 import { supabase } from '@/lib/supabase';
 
 /** Pay without enrolling a face: type your number on your own phone. */
@@ -51,14 +51,15 @@ export default function PhonePayPage() {
     setError(null);
     try {
       await ensureSession();
-      const { error: rpcError } = await supabase!.rpc('start_phone_payment', {
-        p_tx: params?.txId,
-        p_phone: e164,
-      });
-      if (rpcError) throw rpcError;
+      await startPhonePayment(params!.txId, e164);
       setDone(true);
     } catch (err) {
-      const code = err instanceof Error ? err.message : 'ERROR';
+      const code =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'object' && err !== null && 'message' in err
+            ? String((err as { message: unknown }).message)
+            : String(err);
       setError(`No pudimos enviar la solicitud (${code}). Pide al cajero que la genere de nuevo.`);
     } finally {
       setBusy(false);
